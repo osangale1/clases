@@ -1,0 +1,22 @@
+[
+  {
+    "pregunta": "Como mando parametros de query string en una peticion GET?",
+    "documento_id_esperado": "peticiones_get_post.md"
+  },
+  {
+    "pregunta": "Como me autentico con un token tipo Bearer?",
+    "documento_id_esperado": "autenticacion_headers.md"
+  },
+  {
+    "pregunta": "Por que conviene usar una sesion para hacer varias peticiones seguidas?",
+    "documento_id_esperado": "sesiones.md"
+  },
+  {
+    "pregunta": "Que pasa si no le paso un timeout a una peticion?",
+    "documento_id_esperado": "manejo_errores.md"
+  },
+  {
+    "pregunta": "Como parseo el cuerpo de la respuesta si es JSON?",
+    "documento_id_esperado": "respuestas_json.md"
+  }
+]
