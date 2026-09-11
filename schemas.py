@@ -1,27 +1,23 @@
-from typing import Literal, Optional
+from enum import Enum
+from typing import List
 
-from pydantic import BaseModel, Field
-
-
-class ChatMessage(BaseModel):
-    """Un mensaje del chat (rol + contenido)."""
-
-    role: Literal["system", "user", "assistant"]
-    content: str
+from pydantic import BaseModel, Field, field_validator
 
 
-class ModelConfig(BaseModel):
-    """Configuracion del modelo, validada con Pydantic."""
-
-    model: str
-    temperature: float = Field(default=1.0, ge=0, le=2)
-    max_tokens: int = Field(default=1024, gt=0)
+class NivelCriticidad(str, Enum):
+    baja = "baja"
+    media = "media"
+    alta = "alta"
 
 
-class ModelResponse(BaseModel):
-    """Respuesta unificada, sin importar el proveedor."""
+class EntidadesTecnicas(BaseModel):
+    tecnologias: List[str] = Field(description="lista de tecnologias mencionadas en el texto")
+    nivel_de_criticidad: NivelCriticidad
+    resumen_tecnico: str
 
-    content: str
-    model: str
-    provider: str
-    usage: Optional[dict] = None
+    @field_validator("tecnologias")
+    @classmethod
+    def no_vacio(cls, valor: List[str]) -> List[str]:
+        if len(valor) == 0:
+            raise ValueError("no puede quedar vacia")
+        return valor

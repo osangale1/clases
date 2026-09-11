@@ -1,18 +1,9 @@
-# Unified Async LLM Client
+# Pipeline de Extraccion de Entidades Tecnicas
 
-Cliente async simple para hablar con OpenAI y Anthropic bajo la misma interfaz,
-con soporte de streaming y validacion de datos con Pydantic.
-
-## Estructura
-
-- `schemas.py`: modelos Pydantic (`ChatMessage`, `ModelConfig`, `ModelResponse`).
-- `clients.py`: `BaseLLMClient` (clase base), `OpenAIClient`, `AnthropicClient`
-  y `AsyncLLMManager` (elige el proveedor).
-- `main.py`: script de prueba (modo normal y streaming).
+Pre-entrega 2. Recibe un texto y devuelve un JSON validado con las
+tecnologias mencionadas, el nivel de criticidad y un resumen.
 
 ## Instalacion
-
-Requiere Python 3.12+.
 
 ```bash
 python3 -m venv .venv
@@ -22,34 +13,21 @@ pip install -r requirements.txt
 
 ## Configuracion
 
-Copia `.env.example` a `.env` y pon tus API keys:
-
-```bash
-cp .env.example .env
-```
-
-Variables:
-
-- `OPENAI_API_KEY`: API key de OpenAI (opcional, solo si vas a probar OpenAI).
-- `ANTHROPIC_API_KEY`: API key de Anthropic (opcional, solo si vas a probar Anthropic).
-- `OPENAI_MODEL`: modelo de OpenAI a usar (default `gpt-4o-mini`).
-- `ANTHROPIC_MODEL`: modelo de Anthropic a usar (default `claude-opus-5`).
-
-Si alguna de las dos API keys no esta configurada, `main.py` simplemente
-se salta la prueba de ese proveedor.
+Copiar `.env.example` a `.env` y completar las API keys. `LLM_PROVIDER`
+puede ser `anthropic` u `openai`.
 
 ## Uso
 
 ```bash
-python main.py
+python test_pipeline.py
 ```
 
-Esto hace una pregunta corta ("¿Qué es la entropía?") a cada proveedor
-configurado, primero en modo normal y despues en modo streaming (token por token).
+## Ejemplo de salida
 
-## Manejo de errores
-
-Si la API key es invalida, hay un error de red o se llega al limite de tasa,
-el cliente no lanza la excepcion hacia arriba: la captura y devuelve un
-`ModelResponse` con el error dentro de `content`, tanto en modo normal como
-en streaming.
+```json
+{
+  "tecnologias": ["FastAPI", "Redis", "PostgreSQL"],
+  "nivel_de_criticidad": "alta",
+  "resumen_tecnico": "API con cache en Redis y persistencia en PostgreSQL; cuello de botella en conexiones concurrentes."
+}
+```
