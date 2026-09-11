@@ -11,46 +11,25 @@ def cargar_golden_set(ruta: str = "golden_set.json"):
 
 
 def evaluar() -> None:
-    """
-    Para cada pregunta del golden set, busca los top-5 y ve si el documento
-    esperado aparece entre esos 5. Como solo conocemos UN documento
-    relevante por pregunta:
-      - Recall@5    = 1 si el documento esperado aparece entre los 5, 0 si no.
-      - Precision@5 = cuantos de esos 5 son del documento esperado, sobre 5.
-    """
     sistema = RAGSystem()
     golden_set = cargar_golden_set()
 
     recalls = []
     precisiones = []
 
-    print("Resultados por pregunta:\n")
     for caso in golden_set:
-        pregunta = caso["pregunta"]
-        esperado = caso["documento_id_esperado"]
+        resultados = sistema.buscar(caso["pregunta"])
+        fuentes = [doc.metadata.get("fuente") for doc in resultados]
+        coincidencias = fuentes.count(caso["documento_id_esperado"])
 
-        resultados = sistema.buscar(pregunta)
-        fuentes_recuperadas = [doc.metadata.get("fuente") for doc in resultados]
-        coincidencias = fuentes_recuperadas.count(esperado)
+        recalls.append(1 if coincidencias > 0 else 0)
+        precisiones.append(coincidencias / TOP_K)
 
-        recall = 1 if coincidencias > 0 else 0
-        precision = coincidencias / TOP_K
+        print(caso["pregunta"])
+        print("esperado:", caso["documento_id_esperado"], "| recuperados:", fuentes)
 
-        recalls.append(recall)
-        precisiones.append(precision)
-
-        print(f"- Pregunta: {pregunta}")
-        print(f"  Esperado: {esperado}")
-        print(f"  Recuperados: {fuentes_recuperadas}")
-        print(f"  Recall@5: {recall} | Precision@5: {precision:.2f}\n")
-
-    recall_promedio = sum(recalls) / len(recalls)
-    precision_promedio = sum(precisiones) / len(precisiones)
-
-    print("=== Resumen ===")
-    print(f"Preguntas evaluadas:  {len(golden_set)}")
-    print(f"Recall@5 promedio:    {recall_promedio:.2f}")
-    print(f"Precision@5 promedio: {precision_promedio:.2f}")
+    print("Recall@5:", sum(recalls) / len(recalls))
+    print("Precision@5:", sum(precisiones) / len(precisiones))
 
 
 if __name__ == "__main__":

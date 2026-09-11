@@ -12,12 +12,6 @@ TOP_K = 5
 
 
 class RAGSystem:
-    """
-    Encapsula un EnsembleRetriever: mezcla busqueda lexica (BM25, buena para
-    terminos tecnicos exactos) con la busqueda semantica de Pinecone (buena
-    para preguntas con otras palabras pero el mismo significado).
-    """
-
     def __init__(self):
         fragmentos = cargar_y_fragmentar()
 
@@ -31,12 +25,7 @@ class RAGSystem:
         )
         vectorial = vectorstore.as_retriever(search_kwargs={"k": TOP_K})
 
-        self.retriever = EnsembleRetriever(
-            retrievers=[bm25, vectorial],
-            weights=[0.5, 0.5],
-        )
+        self.retriever = EnsembleRetriever(retrievers=[bm25, vectorial], weights=[0.5, 0.5])
 
     def buscar(self, pregunta: str):
-        """Devuelve los top-5 documentos, combinando resultados lexicos y semanticos."""
-        resultados = self.retriever.invoke(pregunta)
-        return resultados[:TOP_K]
+        return self.retriever.invoke(pregunta)[:TOP_K]
