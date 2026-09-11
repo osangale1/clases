@@ -1,0 +1,27 @@
+{
+  "nota": "Ejemplo ILUSTRATIVO del formato de traza que genera test_agent.py (mismo formato que devuelve serializar_mensajes() en agent.py). No es una corrida real contra un LLM: en esta maquina no habia API key configurada al armar el repo. Los resultados de las herramientas (buscar_pedidos / buscar_detalle_ultimo_pedido) SI son reales, esas funciones son deterministicas y no dependen de ningun LLM. Para generar la traza real: correr `python test_agent.py` con tu propia API key, eso crea traza_ejecucion.json con la corrida autentica.",
+  "caso_1_multi_paso": [
+    {"tipo": "human", "contenido": "Cuantos pedidos tuvo el cliente 102, cual fue el total, y cuales son los detalles de su ultimo pedido?"},
+    {"tipo": "ai", "contenido": "", "tool_calls": [{"herramienta": "buscar_pedidos", "argumentos": {"cliente_id": 102}}]},
+    {"tipo": "tool", "contenido": "{\"pedidos\": 3, \"total\": 14500}", "herramienta": "buscar_pedidos"},
+    {"tipo": "ai", "contenido": "", "tool_calls": [{"herramienta": "buscar_detalle_ultimo_pedido", "argumentos": {"cliente_id": 102}}]},
+    {"tipo": "tool", "contenido": "{\"pedido_id\": \"P-1029\", \"fecha\": \"2026-08-02\", \"monto\": 5200, \"estado\": \"entregado\"}", "herramienta": "buscar_detalle_ultimo_pedido"},
+    {"tipo": "ai", "contenido": "El cliente 102 tuvo 3 pedidos por un total de $14.500. Su ultimo pedido (P-1029, del 2026-08-02) fue por $5.200 y ya esta entregado."}
+  ],
+  "caso_2_memoria_entre_turnos": [
+    {"tipo": "human", "contenido": "Cuantos pedidos tuvo el cliente 105 y cual fue el total?"},
+    {"tipo": "ai", "contenido": "", "tool_calls": [{"herramienta": "buscar_pedidos", "argumentos": {"cliente_id": 105}}]},
+    {"tipo": "tool", "contenido": "{\"pedidos\": 1, \"total\": 3200}", "herramienta": "buscar_pedidos"},
+    {"tipo": "ai", "contenido": "El cliente 105 tuvo 1 pedido por un total de $3.200."},
+    {"tipo": "human", "contenido": "Y cual fue su ultimo pedido?"},
+    {"tipo": "ai", "contenido": "", "tool_calls": [{"herramienta": "buscar_detalle_ultimo_pedido", "argumentos": {"cliente_id": 105}}]},
+    {"tipo": "tool", "contenido": "{\"pedido_id\": \"P-1041\", \"fecha\": \"2026-08-15\", \"monto\": 3200, \"estado\": \"en_camino\"}", "herramienta": "buscar_detalle_ultimo_pedido"},
+    {"tipo": "ai", "contenido": "Su ultimo pedido (P-1041, del 2026-08-15) fue por $3.200 y esta en camino."}
+  ],
+  "caso_3_cliente_inexistente": [
+    {"tipo": "human", "contenido": "Cuantos pedidos tuvo el cliente 999?"},
+    {"tipo": "ai", "contenido": "", "tool_calls": [{"herramienta": "buscar_pedidos", "argumentos": {"cliente_id": 999}}]},
+    {"tipo": "tool", "contenido": "{\"error\": \"no se encontro el cliente 999 en la base de pedidos\"}", "herramienta": "buscar_pedidos"},
+    {"tipo": "ai", "contenido": "No encontre al cliente 999 en la base de pedidos. Me confirmas el numero de cliente? Los que tengo cargados son 102, 105 y 110."}
+  ]
+}
