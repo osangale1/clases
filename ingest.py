@@ -16,7 +16,6 @@ NOMBRE_COLECCION = "documentos_tecnicos"
 
 
 def cargar_documentos():
-    """Lee todos los .txt y .md de la carpeta data/."""
     documentos = []
     for patron in ("*.txt", "*.md"):
         loader = DirectoryLoader(
@@ -30,7 +29,6 @@ def cargar_documentos():
 
 
 def fragmentar(documentos):
-    """Chunking con overlap, para no cortar ideas a la mitad entre un fragmento y el siguiente."""
     splitter = RecursiveCharacterTextSplitter.from_tiktoken_encoder(
         encoding_name="cl100k_base",
         chunk_size=500,
@@ -45,16 +43,12 @@ def ya_existe_indice() -> bool:
 
 def ingestar(forzar: bool = False) -> None:
     if ya_existe_indice() and not forzar:
-        print(f"Ya existe un indice en {CARPETA_VECTORSTORE}, no se vuelve a indexar.")
-        print("(Si cambiaste los documentos, corre: python ingest.py --forzar)")
+        print("ya existe el indice, no se reindexa (usa --forzar)")
         return
 
-    print("Cargando documentos de data/...")
     documentos = cargar_documentos()
-    print(f"{len(documentos)} documentos encontrados.")
-
     fragmentos = fragmentar(documentos)
-    print(f"{len(fragmentos)} fragmentos generados (chunk_size=500 tokens, overlap=50).")
+    print(f"{len(fragmentos)} fragmentos")
 
     Chroma.from_documents(
         documents=fragmentos,
@@ -62,7 +56,7 @@ def ingestar(forzar: bool = False) -> None:
         collection_name=NOMBRE_COLECCION,
         persist_directory=CARPETA_VECTORSTORE,
     )
-    print(f"Listo, indice guardado en {CARPETA_VECTORSTORE}.")
+    print("listo")
 
 
 if __name__ == "__main__":
