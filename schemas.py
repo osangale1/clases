@@ -5,29 +5,19 @@ from pydantic import BaseModel, Field, field_validator
 
 
 class NivelCriticidad(str, Enum):
-    """Que tan grave es lo que se describe en el texto."""
-
     baja = "baja"
     media = "media"
     alta = "alta"
 
 
 class EntidadesTecnicas(BaseModel):
-    """Info tecnica que le pedimos al LLM que saque de un texto (log, descripcion de arquitectura, etc)."""
-
-    tecnologias: List[str] = Field(
-        description="Lista de tecnologias/herramientas mencionadas en el texto (ej: FastAPI, Redis, PostgreSQL)."
-    )
-    nivel_de_criticidad: NivelCriticidad = Field(
-        description="Que tan critico es el problema o la arquitectura descrita: baja, media o alta."
-    )
-    resumen_tecnico: str = Field(
-        description="Resumen tecnico breve, 1 o 2 frases, de lo que dice el texto."
-    )
+    tecnologias: List[str] = Field(description="lista de tecnologias mencionadas en el texto")
+    nivel_de_criticidad: NivelCriticidad
+    resumen_tecnico: str
 
     @field_validator("tecnologias")
     @classmethod
     def no_vacio(cls, valor: List[str]) -> List[str]:
         if len(valor) == 0:
-            raise ValueError("la lista de tecnologias no puede quedar vacia")
+            raise ValueError("no puede quedar vacia")
         return valor

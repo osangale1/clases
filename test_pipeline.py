@@ -10,21 +10,18 @@ El servicio corre en FastAPI detras de un Nginx. Se recomienda escalar el pool
 de conexiones o agregar una replica de lectura.
 """
 
-# Texto a proposito ambiguo/vago, para ver si el pipeline se recupera o revienta
 TEXTO_AMBIGUO = "El sistema tuvo un problema ayer, no se bien que paso, algo con la base de datos."
 
 
-async def main() -> None:
-    print("\n--- Caso 1: log de error claro ---")
-    resultado = await process_text(TEXTO_LOG_ERROR)
-    print(resultado.model_dump_json(indent=2))
+async def main():
+    r1 = await process_text(TEXTO_LOG_ERROR)
+    print(r1.model_dump_json(indent=2))
 
-    print("\n--- Caso 2: texto ambiguo (prueba de estres) ---")
     try:
-        resultado_ambiguo = await process_text(TEXTO_AMBIGUO)
-        print(resultado_ambiguo.model_dump_json(indent=2))
+        r2 = await process_text(TEXTO_AMBIGUO)
+        print(r2.model_dump_json(indent=2))
     except Exception as e:
-        print(f"El pipeline fallo despues de los reintentos: {e}")
+        print("fallo despues de los reintentos:", e)
 
 
 if __name__ == "__main__":
