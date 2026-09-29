@@ -1,13 +1,17 @@
+import os
+from contextlib import asynccontextmanager
 from typing import Literal
 
 from dotenv import load_dotenv
 from langchain_core.messages import SystemMessage
+from langgraph.checkpoint.redis.aio import AsyncRedisSaver
 from langgraph.graph import StateGraph, START, END
 
-from state import EstadoOrquestador
-from llm import get_llm
-from agents.research_agent import crear_agente_investigador
-from agents.analyst_agent import crear_agente_analista
+from app.agents.analyst_agent import crear_agente_analista
+from app.agents.research_agent import crear_agente_investigador
+from app.hitl import es_critico, nodo_aprobacion
+from app.llm import get_llm
+from app.state import EstadoOrquestador
 
 load_dotenv()
 
@@ -53,22 +57,33 @@ def nodo_analista(state: EstadoOrquestador) -> dict:
     return {"messages": [resultado["messages"][-1]], "contribuciones": contribuciones}
 
 
-def enrutar(state: EstadoOrquestador) -> Literal["investigador", "analista", "__end__"]:
+def enrutar(state: EstadoOrquestador) -> Literal["investigador", "analista", "aprobacion", "__end__"]:
     destino = state.get("next_agent", "FINISH")
     if destino == "FINISH":
         return END
+
+    texto_original = state["messages"][0].content
+    if destino == "analista" and es_critico(texto_original) and not state.get("aprobado"):
+        return "aprobacion"
+
     return destino
 
 
-def construir_grafo():
-    grafo = StateGraph(EstadoOrquestador)
-    grafo.add_node("supervisor", nodo_supervisor)
-    grafo.add_node("investigador", nodo_investigador)
-    grafo.add_node("analista", nodo_analista)
+@asynccontextmanager
+async def construir_grafo():
+    redis_url = os.environ.get("REDIS_URL", "redis://localhost:6379")
 
-    grafo.add_edge(START, "supervisor")
-    grafo.add_conditional_edges("supervisor", enrutar)
-    grafo.add_edge("investigador", "supervisor")
-    grafo.add_edge("analista", "supervisor")
+    async with AsyncRedisSaver.from_conn_string(redis_url) as checkpointer:
+        grafo = StateGraph(EstadoOrquestador)
+        grafo.add_node("supervisor", nodo_supervisor)
+        grafo.add_node("investigador", nodo_investigador)
+        grafo.add_node("analista", nodo_analista)
+        grafo.add_node("aprobacion", nodo_aprobacion)
 
-    return grafo.compile()
+        grafo.add_edge(START, "supervisor")
+        grafo.add_conditional_edges("supervisor", enrutar)
+        grafo.add_edge("investigador", "supervisor")
+        grafo.add_edge("analista", "supervisor")
+        grafo.add_edge("aprobacion", "analista")
+
+        yield grafo.compile(checkpointer=checkpointer)

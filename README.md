@@ -1,7 +1,8 @@
-# Orquestador multi-agente (Supervisor)
+# API de produccion con orquestador multi-agente
 
-Pre-entrega 6. Supervisor que reparte una consulta entre 2 especialistas
-(investigador y analista) hasta juntar suficiente info para responder.
+Pre-entrega 7. FastAPI encima del orquestador de la pre-entrega 6, con
+estado en Redis, pausa humana (HITL) para tareas criticas, y trazas a
+LangSmith o Phoenix.
 
 ## Instalacion
 
@@ -11,57 +12,78 @@ source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
+Necesita Redis **con RediSearch** (el checkpointer de LangGraph lo usa para
+indexar). Con Docker:
+
+```bash
+docker run -p 6379:6379 redis/redis-stack-server:latest
+```
+
+(Redis normal sin el modulo de busqueda no funciona: tira `unknown command
+'FT.INFO'`.)
+
+O todo junto (Redis + API):
+
+```bash
+docker compose up
+```
+
 ## Configuracion
 
 Copiar `.env.example` a `.env`. `LLM_PROVIDER` puede ser `anthropic` u
-`openai`.
+`openai`. Para trazas, con LangSmith alcanza con completar
+`LANGCHAIN_API_KEY` (no hace falta correr nada local). Si preferis Phoenix,
+poner `PHOENIX_ENABLED=true` y levantarlo con
+`docker run -p 6006:6006 arizephoenix/phoenix`.
 
 ## Uso
 
 ```bash
-python main.py
+uvicorn app.main:app --reload
 ```
 
-Guarda la traza en `trace_ejecucion.json` (contribuciones de cada agente +
-respuesta final).
+- `POST /tasks` con `{"texto": "..."}` -> devuelve `{"job_id": "..."}` sin
+  bloquear (la tarea corre en background).
+- `GET /tasks/{job_id}` -> estado actual: `PENDING`, `RUNNING`, `DONE`,
+  `FAILED` o `WAITING_APPROVAL` (con la `pregunta` de aprobacion).
+- `POST /tasks/{job_id}/approve` con `{"aprobado": true|false}` -> retoma
+  la tarea pausada.
+
+## Prueba de carga (5 peticiones concurrentes)
+
+```bash
+python scripts/prueba_carga.py
+```
+
+Manda 5 `POST /tasks` en paralelo. El costo por ejecucion y la latencia
+p95 salen del dashboard de LangSmith/Phoenix, no del script (el script solo
+genera la carga).
+
+## Human-in-the-loop
+
+Si el texto de la tarea incluye una palabra "critica" (`critico`,
+`produccion`, `alto costo`, `importante`), el grafo se detiene antes de
+mandarle el trabajo al analista y queda en `WAITING_APPROVAL` hasta que
+alguien llame a `/approve`. El estado (incluida la pausa) se persiste en
+Redis via `AsyncRedisSaver`, asi que la aprobacion puede llegar en otra
+peticion HTTP totalmente distinta.
 
 ## Estructura
 
-- `state.py`: estado compartido (`EstadoOrquestador`), extiende
-  `MessagesState` con `next_agent`, `task_completed`, `pasos` y
-  `contribuciones` (quien aporto que).
-- `agents/research_agent.py`: agente investigador, tool `buscar_info`
-  (busqueda simulada sobre docs de pre-entregas anteriores).
-- `agents/analyst_agent.py`: agente analista, tool `analizar_sentimiento`
-  (heuristica simple por palabras clave).
-- `graph.py`: `StateGraph` con nodo supervisor + los 2 especialistas.
-- `main.py`: corre una consulta de ejemplo y guarda la traza.
+- `app/state.py`: estado compartido del grafo.
+- `app/agents/`: investigador (`buscar_info`) y analista
+  (`analizar_sentimiento`).
+- `app/hitl.py`: que cuenta como "critico" + nodo de aprobacion
+  (`interrupt`).
+- `app/graph.py`: arma el grafo (supervisor + especialistas + aprobacion) y
+  el checkpointer de Redis.
+- `app/worker.py`: corre la tarea en background y actualiza el estado en
+  Redis (incluido `FAILED` si algo explota).
+- `app/observability.py`: LangSmith (por variables de entorno) o Phoenix.
+- `app/main.py`: la API.
+- `scripts/prueba_carga.py`: dispara las 5 peticiones concurrentes.
 
-## Topologia
+## screenshots/
 
-Supervisor jerarquico: un nodo central decide a que especialista mandar la
-tarea, en vez de que los agentes se llamen entre si. Cada especialista solo
-ve los mensajes de la conversacion, no metadata interna del grafo, asi no
-se contamina el contexto.
-
-El supervisor corta el loop de 2 formas: su prompt le pide FINISH recien
-cuando ya hay info buscada Y analizada, y ademas hay un tope de `MAX_PASOS`
-(6) por si el LLM no decide terminar solo.
-
-## Diagrama
-
-```mermaid
-graph TD
-    START([START]) --> supervisor
-    supervisor -->|investigador| investigador
-    supervisor -->|analista| analista
-    supervisor -->|FINISH| END([END])
-    investigador --> supervisor
-    analista --> supervisor
-```
-
-## trace_ejemplo.json
-
-Ejemplo ilustrativo del formato (armado a mano, sin API key en esta
-maquina). El resultado de `buscar_info` si es real, es deterministico.
-Corriendo `main.py` con tu key se genera `trace_ejecucion.json` real.
+Pendientes: hacen falta Redis + la API + LangSmith/Phoenix corriendo de
+verdad para sacarlas (ver `screenshots/README.md`).

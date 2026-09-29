@@ -6,3 +6,4 @@ class EstadoOrquestador(MessagesState):
     task_completed: bool
     pasos: int
     contribuciones: dict
+    aprobado: bool

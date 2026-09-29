@@ -1,7 +1,7 @@
 from langchain_core.tools import tool
 from langgraph.prebuilt import create_react_agent
 
-from llm import get_llm
+from app.llm import get_llm
 
 PALABRAS_POSITIVAS = ["facil", "bueno", "mejor", "rapido", "simple"]
 PALABRAS_NEGATIVAS = ["dificil", "malo", "lento", "complejo", "problema"]

@@ -1,9 +1,0 @@
-{
-  "nota": "Ejemplo ilustrativo del formato de traza que genera main.py (sin API key en esta maquina). El resultado de buscar_info SI es real, es deterministico. Corriendo main.py con tu key se genera trace_ejecucion.json real.",
-  "contribuciones": {
-    "investigador": "LangGraph agrega grafos de estado y ciclos sobre LangChain, para agentes con memoria.",
-    "analista": "positivo"
-  },
-  "pasos": 3,
-  "respuesta_final": "LangGraph es una herramienta para armar agentes con memoria sobre LangChain, y la info suena positiva."
-}
