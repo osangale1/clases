@@ -1,89 +1,126 @@
-# API de produccion con orquestador multi-agente
+# Intelligence System
 
-Pre-entrega 7. FastAPI encima del orquestador de la pre-entrega 6, con
-estado en Redis, pausa humana (HITL) para tareas criticas, y trazas a
-LangSmith o Phoenix.
+Entrega final. Un sistema que junta RAG hibrido (BM25 + Pinecone), un
+orquestador multi-agente con supervisor (LangGraph), una API FastAPI
+asincrona con estado en Redis, aprobacion humana para tareas criticas y
+trazas en Arize Phoenix o LangSmith.
 
-## Instalacion
+## Levantar todo (una sola instruccion)
 
-```bash
-python3 -m venv .venv
-source .venv/bin/activate
-pip install -r requirements.txt
-```
-
-Necesita Redis **con RediSearch** (el checkpointer de LangGraph lo usa para
-indexar). Con Docker:
+Requiere Docker y las API keys en `.env`.
 
 ```bash
-docker run -p 6379:6379 redis/redis-stack-server:latest
+./run.sh
 ```
 
-(Redis normal sin el modulo de busqueda no funciona: tira `unknown command
-'FT.INFO'`.)
+La primera vez crea `.env` desde `.env.example` y se detiene para que
+completes las keys (`OPENAI_API_KEY` es obligatoria siempre porque se usa
+para los embeddings, mas `ANTHROPIC_API_KEY` si `LLM_PROVIDER=anthropic`, y
+`PINECONE_API_KEY`). Despues de completarlas, volver a correr `./run.sh`.
 
-O todo junto (Redis + API):
+Eso levanta con `docker compose up --build`:
+
+- `redis`: Redis Stack (estado de jobs + checkpoints de LangGraph, con
+  persistencia en disco).
+- `phoenix`: dashboard de trazas en http://localhost:6006.
+- `ingest`: crea el indice de Pinecone si no existe y sube `data/` (no
+  reindexa si el namespace ya tiene vectores).
+- `app`: la API en http://localhost:8000 (documentacion en `/docs`).
+
+## Probar
 
 ```bash
-docker compose up
+pip install httpx
+python scripts/pruebas.py
 ```
 
-## Configuracion
+Corre 7 pruebas contra la API: pregunta RAG, RAG + sentimiento, calculo de
+costo, tarea critica aprobada, tarea critica rechazada, memoria entre turnos
+con `conversation_id`, y validacion de entrada invalida (422). Guarda el
+resultado en `pruebas_resultado.json` y cada ejecucion queda trazada en
+Phoenix.
 
-Copiar `.env.example` a `.env`. `LLM_PROVIDER` puede ser `anthropic` u
-`openai`. Para trazas, con LangSmith alcanza con completar
-`LANGCHAIN_API_KEY` (no hace falta correr nada local). Si preferis Phoenix,
-poner `PHOENIX_ENABLED=true` y levantarlo con
-`docker run -p 6006:6006 arizephoenix/phoenix`.
+## API
 
-## Uso
+- `POST /tasks` `{"texto": "...", "conversation_id": "opcional"}` -> `202`
+  con `job_id` y `thread_id`. No bloquea: la tarea corre en background.
+- `GET /tasks/{job_id}` -> estado: `PENDING`, `RUNNING`,
+  `WAITING_APPROVAL`, `DONE` o `FAILED` (con respuesta, fuentes y aporte de
+  cada agente).
+- `POST /tasks/{job_id}/approve` `{"aprobado": true|false}` -> retoma una
+  tarea pausada (`409` si el job no esta esperando aprobacion).
+- `GET /health` -> chequea la conexion con Redis.
 
-```bash
-uvicorn app.main:app --reload
+Todas las entradas y salidas estan validadas con Pydantic (`app/schemas.py`),
+incluidos los argumentos y resultados de las herramientas de los agentes.
+
+## Diagrama del grafo
+
+```mermaid
+graph TD;
+    __start__ --> supervisor;
+    analista --> supervisor;
+    aprobacion -.-> analista;
+    aprobacion -.-> sintesis;
+    investigador --> supervisor;
+    supervisor -.-> analista;
+    supervisor -.-> aprobacion;
+    supervisor -.-> investigador;
+    supervisor -.-> sintesis;
+    sintesis --> __end__;
 ```
 
-- `POST /tasks` con `{"texto": "..."}` -> devuelve `{"job_id": "..."}` sin
-  bloquear (la tarea corre en background).
-- `GET /tasks/{job_id}` -> estado actual: `PENDING`, `RUNNING`, `DONE`,
-  `FAILED` o `WAITING_APPROVAL` (con la `pregunta` de aprobacion).
-- `POST /tasks/{job_id}/approve` con `{"aprobado": true|false}` -> retoma
-  la tarea pausada.
+- `supervisor`: decide con una salida estructurada (Pydantic) si interviene
+  el investigador, el analista, o si ya se puede cerrar. Su prompt tiene una
+  rubrica y hay un tope de `MAX_PASOS` para evitar loops.
+- `investigador`: busca en la base de conocimiento con `buscar_en_documentos`
+  (RAG hibrido).
+- `analista`: `analizar_sentimiento` y `calcular_costo_tokens`.
+- `aprobacion`: si el texto del usuario menciona algo critico (`critico`,
+  `produccion`, `alto costo`, `importante`), el grafo se pausa antes del
+  analista (`interrupt`) hasta que alguien llame a `/approve`. Si se rechaza,
+  el analista no se ejecuta.
+- `sintesis`: arma la respuesta final con las fuentes citadas.
 
-## Prueba de carga (5 peticiones concurrentes)
+## Persistencia y memoria
 
-```bash
-python scripts/prueba_carga.py
-```
+El checkpointer es `AsyncRedisSaver` (Redis Stack con persistencia
+`appendonly`). Las conversaciones se guardan por `thread_id`
+(`conversation_id` o el `job_id`), asi que si se reinicia la API (o todo el
+compose) los jobs y las conversaciones siguen ahi.
 
-Manda 5 `POST /tasks` en paralelo. El costo por ejecucion y la latencia
-p95 salen del dashboard de LangSmith/Phoenix, no del script (el script solo
-genera la carga).
+## Observabilidad
 
-## Human-in-the-loop
+- Phoenix: el compose lo activa solo (`PHOENIX_ENABLED=true`). Cada tarea
+  genera una traza con un span por nodo, llamada al LLM y herramienta, y
+  queda etiquetada con `job_id` y `thread_id` en los metadatos.
+- LangSmith: poner `LANGCHAIN_TRACING_V2=true` y `LANGCHAIN_API_KEY` en
+  `.env` (y `PHOENIX_ENABLED=false`).
+- Logs: cada paso del supervisor, aporte de agentes y cambio de estado de
+  un job queda en el log con el `job_id`.
 
-Si el texto de la tarea incluye una palabra "critica" (`critico`,
-`produccion`, `alto costo`, `importante`), el grafo se detiene antes de
-mandarle el trabajo al analista y queda en `WAITING_APPROVAL` hasta que
-alguien llame a `/approve`. El estado (incluida la pausa) se persiste en
-Redis via `AsyncRedisSaver`, asi que la aprobacion puede llegar en otra
-peticion HTTP totalmente distinta.
+## Variables de entorno
+
+Nada de indices ni modelos esta fijo en el codigo: `INDEX_NAME`,
+`PINECONE_NAMESPACE`, `EMBEDDING_MODEL`, `ANTHROPIC_MODEL`, `OPENAI_MODEL`,
+`MAX_PASOS`, `TOP_K`, etc. Ver `.env.example`.
 
 ## Estructura
 
-- `app/state.py`: estado compartido del grafo.
-- `app/agents/`: investigador (`buscar_info`) y analista
-  (`analizar_sentimiento`).
-- `app/hitl.py`: que cuenta como "critico" + nodo de aprobacion
-  (`interrupt`).
-- `app/graph.py`: arma el grafo (supervisor + especialistas + aprobacion) y
-  el checkpointer de Redis.
-- `app/worker.py`: corre la tarea en background y actualiza el estado en
-  Redis (incluido `FAILED` si algo explota).
-- `app/observability.py`: LangSmith (por variables de entorno) o Phoenix.
-- `app/main.py`: la API.
-- `scripts/prueba_carga.py`: dispara las 5 peticiones concurrentes.
+- `app/main.py`: API FastAPI.
+- `app/worker.py`: corre y retoma tareas en background, estado en Redis
+  (incluido `FAILED` si algo explota).
+- `app/graph.py`, `app/state.py`, `app/hitl.py`: grafo, estado compartido y
+  aprobacion humana.
+- `app/agents/`: investigador y analista con sus herramientas.
+- `app/rag/`: chunking, ingesta a Pinecone, retriever hibrido y servicio.
+- `app/jobs.py`: estado de los jobs en Redis.
+- `app/schemas.py`: modelos Pydantic.
+- `app/observability.py`: logs y trazas.
+- `scripts/pruebas.py`: las pruebas contra la API.
+- `data/`: documentos de ejemplo que se indexan.
 
 ## screenshots/
 
-Pendientes: hacen falta Redis + la API + LangSmith/Phoenix corriendo de
-verdad para sacarlas (ver `screenshots/README.md`).
+Pendientes: hacen falta las keys reales para una corrida real (ver
+`screenshots/README.md`).

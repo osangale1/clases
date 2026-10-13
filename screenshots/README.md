@@ -1,8 +1,7 @@
-Capturas pendientes (necesitan Redis + API + LangSmith/Phoenix corriendo con datos reales):
+Capturas pendientes (hacen falta las API keys reales y una corrida real):
 
-- traza de una ejecucion completa en el dashboard
-- costo por ejecucion de las 5 peticiones concurrentes
-- latencia p95 de esa corrida
+- trazas en Phoenix (http://localhost:6006) de las pruebas de `scripts/pruebas.py`
+- una traza detallada con los nodos supervisor / investigador / analista / sintesis
 
-Pasos: levantar todo (`docker compose up`), correr `python scripts/prueba_carga.py`,
-y sacar las capturas del dashboard de LangSmith o Phoenix.
+Pasos: `./run.sh`, despues `python scripts/pruebas.py`, y sacar las capturas
+del dashboard de Phoenix (o LangSmith si se usa esa opcion).

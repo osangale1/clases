@@ -1,9 +1,9 @@
 from langgraph.graph import MessagesState
 
 
-class EstadoOrquestador(MessagesState):
+class EstadoSistema(MessagesState):
     next_agent: str
-    task_completed: bool
     pasos: int
     contribuciones: dict
     aprobado: bool
+    respuesta_final: dict

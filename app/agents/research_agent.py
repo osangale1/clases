@@ -2,29 +2,25 @@ from langchain_core.tools import tool
 from langgraph.prebuilt import create_react_agent
 
 from app.llm import get_llm
-
-DOCS_SIMULADOS = {
-    "langchain": "LangChain es un framework para armar apps con LLMs, con chains y agents.",
-    "langgraph": "LangGraph agrega grafos de estado y ciclos sobre LangChain, para agentes con memoria.",
-    "pinecone": "Pinecone es una base de datos vectorial serverless para busqueda semantica.",
-    "chromadb": "ChromaDB es una base vectorial local, facil de correr sin infra propia.",
-    "redis": "Redis es una base de datos en memoria, se usa aca para guardar el estado de los jobs.",
-}
+from app.rag.service import get_servicio
+from app.schemas import BusquedaInput
 
 
-@tool
-def buscar_info(tema: str) -> str:
-    """Busca informacion sobre un tema tecnico (simulacion de busqueda sobre docs de pre-entregas anteriores)."""
-    tema = tema.lower()
-    for clave, texto in DOCS_SIMULADOS.items():
-        if clave in tema:
-            return texto
-    return "no encontre info sobre ese tema"
+@tool(args_schema=BusquedaInput)
+async def buscar_en_documentos(consulta: str) -> list[dict]:
+    """Busca en la base de conocimiento (RAG hibrido BM25 + vectorial sobre Pinecone) los fragmentos mas
+    relevantes para la consulta. Cada fragmento trae su fuente (archivo), pagina y categoria. Usar siempre
+    antes de afirmar algo tecnico. Si devuelve una lista vacia, no hay info sobre eso."""
+    fragmentos = await get_servicio().buscar(consulta)
+    return [f.model_dump() for f in fragmentos]
 
 
 def crear_agente_investigador():
     return create_react_agent(
         get_llm(),
-        tools=[buscar_info],
-        prompt="Sos el investigador del equipo. Usa buscar_info para conseguir datos, no inventes nada.",
+        tools=[buscar_en_documentos],
+        prompt=(
+            "Sos el investigador del equipo. Usa buscar_en_documentos para conseguir datos y responde solo "
+            "con lo que encuentres, citando la fuente (archivo). Si no hay info, decilo."
+        ),
     )

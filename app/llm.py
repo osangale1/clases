@@ -1,17 +1,15 @@
-import os
+from app import config
 
 
 def get_llm():
-    proveedor = os.environ.get("LLM_PROVIDER", "anthropic").lower()
-
-    if proveedor == "openai":
+    if config.LLM_PROVIDER == "openai":
         from langchain_openai import ChatOpenAI
 
-        return ChatOpenAI(model=os.environ.get("OPENAI_MODEL", "gpt-4o-mini"), temperature=0)
+        return ChatOpenAI(model=config.OPENAI_MODEL, temperature=0)
 
-    if proveedor == "anthropic":
+    if config.LLM_PROVIDER == "anthropic":
         from langchain_anthropic import ChatAnthropic
 
-        return ChatAnthropic(model=os.environ.get("ANTHROPIC_MODEL", "claude-opus-5"), temperature=0)
+        return ChatAnthropic(model=config.ANTHROPIC_MODEL, temperature=0)
 
-    raise ValueError(f"proveedor no soportado: {proveedor}")
+    raise ValueError(f"proveedor no soportado: {config.LLM_PROVIDER}")

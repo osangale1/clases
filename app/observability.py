@@ -1,18 +1,31 @@
+import logging
 import os
 
-from dotenv import load_dotenv
+from app import config
 
-load_dotenv()
+logger = logging.getLogger("sistema")
 
 
-def setup_observability():
-    if os.environ.get("PHOENIX_ENABLED", "false").lower() == "true":
-        from phoenix.otel import register
+def setup_logging() -> None:
+    logging.basicConfig(
+        level=config.LOG_LEVEL,
+        format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
+    )
+
+
+def setup_observability() -> None:
+    if config.PHOENIX_ENABLED:
         from openinference.instrumentation.langchain import LangChainInstrumentor
+        from phoenix.otel import register
 
-        register(endpoint=os.environ.get("PHOENIX_COLLECTOR_ENDPOINT", "http://localhost:6006/v1/traces"))
-        LangChainInstrumentor().instrument()
-        return
-
-    # si no usas phoenix, con LANGCHAIN_TRACING_V2=true + LANGCHAIN_API_KEY en el .env
-    # LangSmith traza solo, no hace falta codigo extra aca
+        tracer_provider = register(
+            project_name=config.PHOENIX_PROJECT,
+            endpoint=config.PHOENIX_ENDPOINT,
+            auto_instrument=False,
+        )
+        LangChainInstrumentor().instrument(tracer_provider=tracer_provider)
+        logger.info("trazas -> Phoenix (%s)", config.PHOENIX_ENDPOINT)
+    elif os.environ.get("LANGCHAIN_TRACING_V2", "false").lower() == "true":
+        logger.info("trazas -> LangSmith (proyecto %s)", os.environ.get("LANGCHAIN_PROJECT", "default"))
+    else:
+        logger.warning("sin plataforma de trazas configurada (ni Phoenix ni LangSmith)")

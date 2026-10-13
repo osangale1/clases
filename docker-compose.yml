@@ -1,8 +1,33 @@
 services:
   redis:
     image: redis/redis-stack-server:latest
+    environment:
+      REDIS_ARGS: "--appendonly yes"
+    volumes:
+      - redis_data:/data
     ports:
       - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  phoenix:
+    image: arizephoenix/phoenix:latest
+    ports:
+      - "6006:6006"
+
+  ingest:
+    build: .
+    command: python -m app.rag.ingest
+    env_file:
+      - .env
+    environment:
+      REDIS_URL: redis://redis:6379
+    depends_on:
+      redis:
+        condition: service_healthy
 
   app:
     build: .
@@ -10,5 +35,17 @@ services:
       - "8000:8000"
     env_file:
       - .env
+    environment:
+      REDIS_URL: redis://redis:6379
+      PHOENIX_ENABLED: "true"
+      PHOENIX_COLLECTOR_ENDPOINT: http://phoenix:6006/v1/traces
     depends_on:
-      - redis
+      redis:
+        condition: service_healthy
+      phoenix:
+        condition: service_started
+      ingest:
+        condition: service_completed_successfully
+
+volumes:
+  redis_data:
