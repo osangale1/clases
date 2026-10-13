@@ -1,7 +1,7 @@
 from typing import Literal
 
 from dotenv import load_dotenv
-from langchain_core.messages import SystemMessage
+from langchain_core.messages import HumanMessage, SystemMessage
 from langgraph.graph import StateGraph, START, END
 
 from state import EstadoOrquestador
@@ -26,7 +26,11 @@ def nodo_supervisor(state: EstadoOrquestador) -> dict:
     if pasos >= MAX_PASOS:
         return {"next_agent": "FINISH", "task_completed": True, "pasos": pasos + 1}
 
-    respuesta = get_llm().invoke([SystemMessage(content=PROMPT_SUPERVISOR)] + state["messages"])
+    respuesta = get_llm().invoke(
+        [SystemMessage(content=PROMPT_SUPERVISOR)]
+        + state["messages"]
+        + [HumanMessage(content="Decidi quien sigue: investigador, analista o FINISH.")]
+    )
     decision = respuesta.content.strip().lower()
 
     if "investigador" in decision:
@@ -40,14 +44,18 @@ def nodo_supervisor(state: EstadoOrquestador) -> dict:
 
 
 def nodo_investigador(state: EstadoOrquestador) -> dict:
-    resultado = crear_agente_investigador().invoke({"messages": state["messages"]})
+    resultado = crear_agente_investigador().invoke(
+        {"messages": state["messages"] + [HumanMessage(content="Tu turno, investigador: busca la info que falta.")]}
+    )
     contribuciones = dict(state.get("contribuciones", {}))
     contribuciones["investigador"] = resultado["messages"][-1].content
     return {"messages": [resultado["messages"][-1]], "contribuciones": contribuciones}
 
 
 def nodo_analista(state: EstadoOrquestador) -> dict:
-    resultado = crear_agente_analista().invoke({"messages": state["messages"]})
+    resultado = crear_agente_analista().invoke(
+        {"messages": state["messages"] + [HumanMessage(content="Tu turno, analista: procesa la info ya reunida.")]}
+    )
     contribuciones = dict(state.get("contribuciones", {}))
     contribuciones["analista"] = resultado["messages"][-1].content
     return {"messages": [resultado["messages"][-1]], "contribuciones": contribuciones}
