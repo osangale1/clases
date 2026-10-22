@@ -75,7 +75,5 @@ async def aprobar(job_id: str, datos: AprobacionInput, background_tasks: Backgro
     if estado.status != "WAITING_APPROVAL":
         raise HTTPException(status_code=409, detail=f"el job esta en {estado.status}, no espera aprobacion")
 
-    background_tasks.add_task(
-        aprobar_tarea, app.state.grafo, app.state.store, job_id, estado.thread_id, datos.aprobado
-    )
+    background_tasks.add_task(aprobar_tarea, app.state.grafo, app.state.store, job_id, estado.thread_id, datos.aprobado)
     return estado

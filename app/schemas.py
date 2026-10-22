@@ -1,4 +1,4 @@
-from typing import Literal, Optional
+from typing import Literal
 
 from pydantic import BaseModel, Field
 
@@ -8,7 +8,7 @@ StatusJob = Literal["PENDING", "RUNNING", "WAITING_APPROVAL", "DONE", "FAILED"]
 # ---- API ----
 class TareaInput(BaseModel):
     texto: str = Field(min_length=3, max_length=2000)
-    conversation_id: Optional[str] = Field(default=None, min_length=1, max_length=100)
+    conversation_id: str | None = Field(default=None, min_length=1, max_length=100)
 
 
 class TareaCreada(BaseModel):
@@ -29,10 +29,10 @@ class EstadoTarea(BaseModel):
     job_id: str
     thread_id: str
     status: StatusJob
-    pregunta: Optional[str] = None
-    contribuciones: Optional[dict[str, str]] = None
-    resultado: Optional[RespuestaFinal] = None
-    error: Optional[str] = None
+    pregunta: str | None = None
+    contribuciones: dict[str, str] | None = None
+    resultado: RespuestaFinal | None = None
+    error: str | None = None
 
 
 # ---- supervisor ----

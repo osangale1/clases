@@ -49,9 +49,7 @@ async def _guardar_resultado(store: JobStore, job_id: str, thread_id: str, resul
 
 async def _marcar_fallo(store: JobStore, job_id: str, thread_id: str, error: Exception) -> None:
     logger.exception("job %s fallo", job_id)
-    await store.guardar(
-        EstadoTarea(job_id=job_id, thread_id=thread_id, status="FAILED", error=str(error)[:500])
-    )
+    await store.guardar(EstadoTarea(job_id=job_id, thread_id=thread_id, status="FAILED", error=str(error)[:500]))
 
 
 async def ejecutar_tarea(grafo, store: JobStore, job_id: str, thread_id: str, texto: str) -> None:

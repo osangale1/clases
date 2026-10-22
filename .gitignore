@@ -3,3 +3,5 @@ __pycache__/
 *.pyc
 .env
 pruebas_resultado.json
+.pytest_cache/
+.ruff_cache/

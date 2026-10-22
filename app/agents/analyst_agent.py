@@ -37,9 +37,7 @@ def calcular_costo_tokens(
 ) -> dict:
     """Calcula el costo en USD de una llamada a un LLM a partir de los tokens de entrada y salida y del
     precio por millon de tokens de cada tipo. Usar cuando pidan estimar costos."""
-    costo = (
-        tokens_entrada * precio_entrada_por_millon + tokens_salida * precio_salida_por_millon
-    ) / 1_000_000
+    costo = (tokens_entrada * precio_entrada_por_millon + tokens_salida * precio_salida_por_millon) / 1_000_000
     return ResultadoCosto(costo_usd=round(costo, 6)).model_dump()
 
 

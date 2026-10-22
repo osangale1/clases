@@ -3,7 +3,29 @@
 Entrega final. Un sistema que junta RAG hibrido (BM25 + Pinecone), un
 orquestador multi-agente con supervisor (LangGraph), una API FastAPI
 asincrona con estado en Redis, aprobacion humana para tareas criticas y
-trazas en Arize Phoenix o LangSmith.
+trazas en Arize Phoenix o LangSmith. Python 3.12+.
+
+## Verificacion rapida (sin API keys, sin Docker)
+
+```bash
+./run_tests.sh
+```
+
+Crea el entorno, instala dependencias y corre **44 tests** (42 sin Redis, los
+2 de integracion con Redis Stack se saltean solos). Deja el resultado en
+`reports/test_report.txt` y `reports/junit.xml`. Los tests usan un LLM falso
+con guion, asi que validan la logica del sistema, no la calidad de un modelo
+real (ver `reports/README.md` para el alcance exacto).
+
+## Donde esta cada cosa
+
+| Criterio | Que mirar | Evidencia |
+| --- | --- | --- |
+| Arquitectura y coherencia | RAG (`app/rag/`) + agentes (`app/agents/`, `app/graph.py`) + API (`app/main.py`, `app/worker.py`) unidos en un solo flujo, diagramas abajo | `tests/test_graph.py`, `tests/test_api.py` |
+| Asincronia y validacion | Nodos, worker y endpoints `async`; Pydantic en API y herramientas (`app/schemas.py`); sin `requests` ni llamadas bloqueantes dentro de `async def` | `tests/test_estandares.py`, `tests/test_schemas.py`, `tests/test_tools.py` |
+| Persistencia y observabilidad | `AsyncRedisSaver` (checkpoints) + estado de jobs en Redis; trazas a Phoenix/LangSmith con `job_id` en los metadatos | `tests/test_integracion_redis.py`, `reports/phoenix_trazas_resumen.json`, `screenshots/` |
+| Documentacion y despliegue | Este README, diagramas, `./run.sh` (un solo comando), `docker-compose.yml`, `/docs` de la API | `reports/compose_report.txt` |
+| Entorno y estandares | `pyproject.toml` (`requires-python >=3.12`), `.python-version`, `requirements*.txt`, `.env.example` (nada hardcodeado), `ruff` | `reports/lint_report.txt` |
 
 ## Levantar todo (una sola instruccion)
 
@@ -27,7 +49,7 @@ Eso levanta con `docker compose up --build`:
   reindexa si el namespace ya tiene vectores).
 - `app`: la API en http://localhost:8000 (documentacion en `/docs`).
 
-## Probar
+## Probar con modelo real
 
 ```bash
 pip install httpx
@@ -39,6 +61,10 @@ costo, tarea critica aprobada, tarea critica rechazada, memoria entre turnos
 con `conversation_id`, y validacion de entrada invalida (422). Guarda el
 resultado en `pruebas_resultado.json` y cada ejecucion queda trazada en
 Phoenix.
+
+Sin keys, `python -m scripts.demo_trazas_offline` (con `docker compose up -d
+redis phoenix`) corre esas mismas 7 pruebas con un LLM con guion y deja
+trazas reales en Phoenix: asi se generaron las capturas de `screenshots/`.
 
 ## API
 
@@ -53,6 +79,23 @@ Phoenix.
 
 Todas las entradas y salidas estan validadas con Pydantic (`app/schemas.py`),
 incluidos los argumentos y resultados de las herramientas de los agentes.
+
+## Arquitectura
+
+```mermaid
+graph LR
+    Cliente -->|POST /tasks| API[FastAPI]
+    API -->|job PENDING| Redis[(Redis Stack)]
+    API -->|background task| Worker
+    Worker -->|ainvoke + thread_id| Grafo[Grafo LangGraph]
+    Grafo <-->|checkpoints| Redis
+    Worker -->|estado del job| Redis
+    Grafo --> Investigador
+    Investigador -->|buscar_en_documentos| RAG[Retriever hibrido]
+    RAG --> BM25[BM25 en memoria]
+    RAG --> Pinecone[(Pinecone)]
+    Grafo -.->|trazas| Phoenix[Phoenix / LangSmith]
+```
 
 ## Diagrama del grafo
 
@@ -87,7 +130,9 @@ graph TD;
 El checkpointer es `AsyncRedisSaver` (Redis Stack con persistencia
 `appendonly`). Las conversaciones se guardan por `thread_id`
 (`conversation_id` o el `job_id`), asi que si se reinicia la API (o todo el
-compose) los jobs y las conversaciones siguen ahi.
+compose) los jobs y las conversaciones siguen ahi. Los tests de
+`tests/test_integracion_redis.py` lo comprueban abriendo un checkpointer
+nuevo contra el mismo Redis, como pasaria tras un reinicio.
 
 ## Observabilidad
 
@@ -117,10 +162,14 @@ Nada de indices ni modelos esta fijo en el codigo: `INDEX_NAME`,
 - `app/jobs.py`: estado de los jobs en Redis.
 - `app/schemas.py`: modelos Pydantic.
 - `app/observability.py`: logs y trazas.
-- `scripts/pruebas.py`: las pruebas contra la API.
+- `scripts/pruebas.py`: las pruebas contra la API con modelo real.
+- `scripts/demo_trazas_offline.py`: las mismas pruebas con LLM con guion.
+- `tests/`: suite pytest. `reports/`: evidencia generada.
 - `data/`: documentos de ejemplo que se indexan.
 
-## screenshots/
+## Capturas (`screenshots/`)
 
-Pendientes: hacen falta las keys reales para una corrida real (ver
-`screenshots/README.md`).
+Las capturas incluidas son de Phoenix con las trazas del demo offline
+(LLM con guion, por eso costo `$0` y sin tokens). Las capturas de costo por
+ejecucion y latencia con tokens reales necesitan una corrida con las API
+keys (ver `screenshots/README.md`).

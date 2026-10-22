@@ -1,0 +1,56 @@
+{
+  "pruebas": {
+    "1_rag": "DONE",
+    "2_rag_y_sentimiento": "DONE",
+    "3_calculo_costo": "DONE",
+    "4_critica_aprobada": [
+      "WAITING_APPROVAL",
+      "DONE"
+    ],
+    "5_critica_rechazada": [
+      "WAITING_APPROVAL",
+      "DONE"
+    ],
+    "6_memoria_entre_turnos": "DONE",
+    "7_validacion_422": 422
+  },
+  "phoenix": {
+    "proyecto": "sistema-final-demo-offline",
+    "aviso": "LLM con guion (sin tokens/costo reales): valida que cada nodo y herramienta quede trazado",
+    "spans_totales": 318,
+    "trazas": 29,
+    "spans_por_nombre": {
+      "fastapi.dependencies": 29,
+      "fastapi.serialization": 28,
+      "fastapi.endpoint": 28,
+      "pop": 21,
+      "GET /tasks/{job_id}": 18,
+      "supervisor": 14,
+      "enrutar_supervisor": 14,
+      "agent": 14,
+      "should_continue": 14,
+      "call_model": 14,
+      "RunnableSequence": 14,
+      "FakeLLM": 14,
+      "Prompt": 14,
+      "fastapi.background_task": 9,
+      "sistema-final": 9,
+      "POST /tasks": 8,
+      "sintesis": 7,
+      "LangGraph": 7,
+      "tools": 7,
+      "aprobacion": 4,
+      "investigador": 4,
+      "buscar_en_documentos": 4,
+      "EnsembleRetriever": 4,
+      "BM25Retriever": 4,
+      "VectorStoreRetriever": 4,
+      "analista": 3,
+      "enrutar_aprobacion": 2,
+      "POST /tasks/{job_id}/approve": 2,
+      "analizar_sentimiento": 2,
+      "calcular_costo_tokens": 1,
+      "GET /health": 1
+    }
+  }
+}

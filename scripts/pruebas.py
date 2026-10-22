@@ -1,6 +1,7 @@
 import asyncio
 import json
 import os
+from pathlib import Path
 
 import httpx
 
@@ -95,8 +96,8 @@ async def main() -> None:
                 resultados[prueba.__name__] = {"error": str(e)}
             print(json.dumps(resultados[prueba.__name__], ensure_ascii=False, indent=2))
 
-    with open("pruebas_resultado.json", "w", encoding="utf-8") as f:
-        json.dump(resultados, f, ensure_ascii=False, indent=2)
+    contenido = json.dumps(resultados, ensure_ascii=False, indent=2)
+    await asyncio.to_thread(Path("pruebas_resultado.json").write_text, contenido, encoding="utf-8")
 
 
 if __name__ == "__main__":

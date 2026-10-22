@@ -1,0 +1,2 @@
+# docker compose config (valida docker-compose.yml) - 2026-10-22 12:55
+docker-compose.yml: VALIDO (servicios: redis ingest phoenix app )
