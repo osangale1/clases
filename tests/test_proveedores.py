@@ -182,3 +182,30 @@ def test_indice_inexistente_se_crea_con_la_dimension_configurada(monkeypatch):
 
     assert creados[0]["dimension"] == 768
     assert creados[0]["metric"] == "cosine"
+
+
+# ---- VECTOR_STORE=memory (sin Pinecone) ----
+async def test_modo_memoria_indexa_al_arrancar_sin_pinecone(monkeypatch):
+    from langchain_core.embeddings import DeterministicFakeEmbedding
+
+    import app.rag.service as m_service
+    from app.rag.service import RAGService
+
+    monkeypatch.setattr(config, "VECTOR_STORE", "memory")
+    monkeypatch.setattr(m_service, "get_embeddings", lambda: DeterministicFakeEmbedding(size=16))
+
+    def pinecone_no_se_usa():
+        raise AssertionError("en modo memoria no se tiene que tocar Pinecone")
+
+    monkeypatch.setattr(m_service, "crear_vectorstore", pinecone_no_se_usa)
+
+    servicio = await RAGService.crear()
+    fragmentos = await servicio.buscar("RediSearch")
+    assert "redis.md" in {f.fuente for f in fragmentos}
+
+
+async def test_ingest_en_modo_memoria_no_sube_nada(monkeypatch):
+    monkeypatch.setattr(config, "VECTOR_STORE", "memory")
+    monkeypatch.setattr(ingest, "get_pinecone_client", lambda: (_ for _ in ()).throw(AssertionError("no")))
+
+    await ingest.ingestar()

@@ -11,7 +11,7 @@ trazas en Arize Phoenix o LangSmith. Python 3.12+.
 ./run_tests.sh
 ```
 
-Crea el entorno, instala dependencias y corre **56 tests** (54 sin Redis, los
+Crea el entorno, instala dependencias y corre **61 tests** (59 sin Redis, los
 2 de integracion con Redis Stack se saltean solos). Deja el resultado en
 `reports/test_report.txt` y `reports/junit.xml`. Los tests usan un LLM falso
 con guion, asi que validan la logica del sistema, no la calidad de un modelo
@@ -23,7 +23,7 @@ real (ver `reports/README.md` para el alcance exacto).
 | --- | --- | --- |
 | Arquitectura y coherencia | RAG (`app/rag/`) + agentes (`app/agents/`, `app/graph.py`) + API (`app/main.py`, `app/worker.py`) unidos en un solo flujo, diagramas abajo | `tests/test_graph.py`, `tests/test_api.py` |
 | Asincronia y validacion | Nodos, worker y endpoints `async`; Pydantic en API y herramientas (`app/schemas.py`); sin `requests` ni llamadas bloqueantes dentro de `async def` | `tests/test_estandares.py`, `tests/test_schemas.py`, `tests/test_tools.py` |
-| Persistencia y observabilidad | `AsyncRedisSaver` (checkpoints) + estado de jobs en Redis; trazas a Phoenix/LangSmith con `job_id` en los metadatos | `tests/test_integracion_redis.py`, `reports/phoenix_trazas_resumen.json`, `screenshots/` |
+| Persistencia y observabilidad | `AsyncRedisSaver` (checkpoints) + estado de jobs en Redis; trazas a Phoenix/LangSmith con `job_id` en los metadatos | `tests/test_integracion_redis.py`, `reports/phoenix_trazas_resumen.json`, `reports/gemini_real.md` (corrida real con Gemini), `screenshots/` |
 | Documentacion y despliegue | Este README, diagramas, `./run.sh` (un solo comando), `docker-compose.yml`, `/docs` de la API | `reports/compose_report.txt` |
 | Entorno y estandares | `pyproject.toml` (`requires-python >=3.12`), `.python-version`, `requirements*.txt`, `.env.example` (nada hardcodeado), `ruff` | `reports/lint_report.txt` |
 
@@ -151,17 +151,25 @@ OpenAI ni Anthropic:
 1. Crear una key gratis en https://aistudio.google.com/apikey.
 2. Pegarla en `.env` como `GOOGLE_API_KEY` (el resto de las variables de
    Gemini ya vienen en `.env.example`).
-3. `./run.sh`.
+3. `./run.sh`. Sin Pinecone: poner `VECTOR_STORE=memory` en `.env` y alcanza
+   con la key de Gemini (los documentos se indexan en memoria al arrancar).
 
 Que hay que saber:
 
 - **Privacidad:** segun la pagina de precios de Google, en el tier gratuito
   el contenido que se envia se usa para mejorar sus productos. No mandar datos
   sensibles. Los documentos de `data/` son de ejemplo, no hay problema.
-- **Limites:** el tier gratuito tiene limites por minuto y por dia que Google
-  no fija en la documentacion (se ven en AI Studio). Si se pasan, la API
-  devuelve 429: el cliente reintenta hasta 6 veces y, si igual falla, el job
-  queda en `FAILED` con el error. Para las pruebas conviene correrlas de a una.
+- **Limites (medidos en una corrida real):** el cupo es por modelo y por
+  proyecto. Para `gemini-3.6-flash` Google devolvio 429 con
+  `GenerateRequestsPerDayPerProjectPerModel-FreeTier = 20` y
+  `GenerateRequestsPerMinutePerProjectPerModel-FreeTier = 5`. Cada tarea usa
+  entre 5 y 8 pedidos al LLM, asi que con un solo modelo entran ~3 tareas por
+  dia. Como el cupo es por modelo, se puede repartir cambiando `GOOGLE_MODEL`
+  (los modelos gratuitos estan en la pagina de precios de Google). Tambien
+  aparecen 503 ("high demand") en horas pico: el cliente reintenta hasta
+  `GOOGLE_MAX_RETRIES` veces y, si igual falla, el job queda en `FAILED` con
+  el error (nunca colgado). El cupo diario se renueva a medianoche (hora del
+  Pacifico).
 - **Embeddings:** `gemini-embedding-2` no acepta `task_type` y, si se le pasa
   una lista de textos, devuelve un solo embedding agregado. Por eso
   `app/rag/embeddings.py` tiene un wrapper propio (un `Content` por texto,
@@ -169,7 +177,7 @@ Que hay que saber:
   texto). Se usa dimension 768, asi que el indice de Pinecone tiene que ser de
   768: si `INDEX_NAME` ya existe con otra dimension, `ingest` falla con un
   mensaje claro (usar otro `INDEX_NAME` o borrar el indice).
-- Los modelos gratuitos cambian con el tiempo: si `gemini-2.5-flash` deja de
+- Los modelos gratuitos cambian con el tiempo: si `gemini-3.5-flash-lite` deja de
   estar disponible, cambiar `GOOGLE_MODEL`.
 - Para volver a un proveedor de pago: `LLM_PROVIDER=anthropic|openai` y/o
   `EMBEDDING_PROVIDER=openai` (ver los comentarios de `.env.example`).

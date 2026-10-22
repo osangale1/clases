@@ -152,3 +152,57 @@ async def test_checkpointer_recuerda_la_conversacion_por_thread_id(servicio_rag)
     fakes.COLA.extend([decide("FINISH"), final("Otra conversacion.", [])])
     await grafo.ainvoke(entrada("hola"), config=config_hilo("conv-2"))
     assert fakes.VISTO[0][1] < 4, "otro thread_id no deberia heredar la historia"
+
+
+async def test_supervisor_recibe_quien_aporto_que(servicio_rag):
+    fakes.COLA.extend(
+        [
+            decide("investigador"),
+            tool_call("buscar_en_documentos", {"consulta": "Redis"}, "c1"),
+            texto("Redis guarda el estado de los jobs."),
+            decide("FINISH"),
+            final("Listo.", ["redis.md"]),
+        ]
+    )
+
+    await compilar().ainvoke(entrada("Que es Redis?"), config=config_hilo())
+
+    decisiones = [v for v in fakes.VISTO if v[0] == "struct"]
+    assert "todavia no aporto ningun agente" in decisiones[0][3]
+    assert "- investigador: Redis guarda el estado de los jobs." in decisiones[1][3]
+
+
+async def test_validacion_no_deja_cerrar_sin_el_analisis_pedido(servicio_rag):
+    fakes.COLA.extend(
+        [
+            decide("investigador"),
+            tool_call("buscar_en_documentos", {"consulta": "Redis"}, "c1"),
+            texto("Redis guarda el estado."),
+            decide("FINISH"),  # el modelo quiere cerrar sin analizar: la validacion lo deriva al analista
+            tool_call("analizar_sentimiento", {"texto": "Redis ayuda"}, "c2"),
+            texto("Sentimiento positivo."),
+            decide("FINISH"),
+            final("Redis suena positivo.", ["redis.md"]),
+        ]
+    )
+
+    r = await compilar().ainvoke(entrada("Busca info de Redis y analiza el sentimiento"), config=config_hilo())
+
+    assert set(r["contribuciones"]) == {"investigador", "analista"}
+    assert not fakes.COLA
+
+
+async def test_resumen_dice_que_agente_falta(servicio_rag):
+    fakes.COLA.extend(
+        [
+            decide("investigador"),
+            tool_call("buscar_en_documentos", {"consulta": "Redis"}, "c1"),
+            texto("Redis guarda el estado."),
+            decide("FINISH"),
+            final("Listo.", ["redis.md"]),
+        ]
+    )
+    await compilar().ainvoke(entrada("Que es Redis?"), config=config_hilo())
+
+    decisiones = [v for v in fakes.VISTO if v[0] == "struct"]
+    assert "Todavia no aporto: analista." in decisiones[1][3]

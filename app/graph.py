@@ -45,6 +45,28 @@ def ultimo_texto_usuario(state: EstadoSistema) -> str:
     return ""
 
 
+PALABRAS_ANALISIS = ["analiza", "analisis", "sentimiento", "calcula", "costo"]
+AGENTES = ["investigador", "analista"]
+
+
+def requiere_analisis(texto: str) -> bool:
+    texto = texto.lower()
+    return any(p in texto for p in PALABRAS_ANALISIS)
+
+
+def resumen_contribuciones(state: EstadoSistema) -> str:
+    # los aportes llegan al LLM como mensajes del asistente sin rotulo: se le dice explicitamente quien aporto que
+    contribuciones = state.get("contribuciones") or {}
+    if not contribuciones:
+        return "En esta tarea todavia no aporto ningun agente."
+    lineas = [f"- {agente}: {texto[:1500]}" for agente, texto in contribuciones.items()]
+    faltan = [a for a in AGENTES if a not in contribuciones]
+    resumen = "En esta tarea ya aportaron:\n" + "\n".join(lineas)
+    if faltan:
+        resumen += f"\nTodavia no aporto: {', '.join(faltan)}."
+    return resumen
+
+
 @lru_cache
 def get_agente_investigador():
     return crear_agente_investigador()
@@ -65,10 +87,27 @@ async def nodo_supervisor(state: EstadoSistema) -> dict:
     decision = await decisor.ainvoke(
         [SystemMessage(content=PROMPT_SUPERVISOR)]
         + state["messages"]
-        + [HumanMessage(content="Decidi quien interviene ahora (o FINISH) y explica el motivo.")]
+        + [
+            HumanMessage(
+                content=resumen_contribuciones(state)
+                + "\n\nDecidi quien interviene ahora (o FINISH) y explica el motivo."
+            )
+        ]
     )
-    logger.info("supervisor paso %s -> %s (%s)", pasos + 1, decision.siguiente, decision.motivo)
-    return {"next_agent": decision.siguiente, "pasos": pasos + 1}
+    siguiente = decision.siguiente
+
+    # validacion: no se cierra si el usuario pidio un analisis/calculo y el analista no aporto nada
+    if (
+        siguiente == "FINISH"
+        and requiere_analisis(ultimo_texto_usuario(state))
+        and "analista" not in (state.get("contribuciones") or {})
+        and pasos + 1 < config.MAX_PASOS
+    ):
+        logger.warning("validacion: el supervisor quiso cerrar sin el analisis pedido, se deriva al analista")
+        siguiente = "analista"
+
+    logger.info("supervisor paso %s -> %s (%s)", pasos + 1, siguiente, decision.motivo)
+    return {"next_agent": siguiente, "pasos": pasos + 1}
 
 
 async def nodo_investigador(state: EstadoSistema) -> dict:

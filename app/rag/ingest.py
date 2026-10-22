@@ -50,6 +50,10 @@ def ya_esta_indexado() -> bool:
 
 
 async def ingestar(forzar: bool = False) -> None:
+    if config.VECTOR_STORE == "memory":
+        print("VECTOR_STORE=memory: no hay nada que subir, la API indexa en memoria al arrancar")
+        return
+
     await asyncio.to_thread(asegurar_indice)
 
     if not forzar and await asyncio.to_thread(ya_esta_indexado):

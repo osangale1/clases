@@ -1,7 +1,10 @@
 import asyncio
 
+from langchain_core.vectorstores import InMemoryVectorStore
+
 from app import config
 from app.rag.documentos import cargar_y_fragmentar
+from app.rag.embeddings import get_embeddings
 from app.rag.retriever import construir_retriever, crear_vectorstore
 from app.schemas import FragmentoDoc
 
@@ -13,7 +16,14 @@ class RAGService:
     @classmethod
     async def crear(cls) -> "RAGService":
         fragmentos = await asyncio.to_thread(cargar_y_fragmentar)
-        vectorstore = await asyncio.to_thread(crear_vectorstore)
+
+        if config.VECTOR_STORE == "memory":
+            # sin Pinecone: se indexa en memoria al arrancar (mismos embeddings, mismo retriever hibrido)
+            vectorstore = InMemoryVectorStore(get_embeddings())
+            await vectorstore.aadd_documents(fragmentos)
+        else:
+            vectorstore = await asyncio.to_thread(crear_vectorstore)
+
         return cls(construir_retriever(fragmentos, vectorstore))
 
     async def buscar(self, consulta: str) -> list[FragmentoDoc]:

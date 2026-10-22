@@ -7,6 +7,7 @@ load_dotenv()
 REDIS_URL = os.environ.get("REDIS_URL", "redis://localhost:6379")
 JOB_TTL_SEGUNDOS = int(os.environ.get("JOB_TTL_SEGUNDOS", "86400"))
 
+VECTOR_STORE = os.environ.get("VECTOR_STORE", "pinecone").lower()
 INDEX_NAME = os.environ.get("INDEX_NAME", "curso-rag-index")
 PINECONE_NAMESPACE = os.environ.get("PINECONE_NAMESPACE", "documentacion-tecnica")
 PINECONE_CLOUD = os.environ.get("PINECONE_CLOUD", "aws")
@@ -24,7 +25,8 @@ CHUNK_OVERLAP = int(os.environ.get("CHUNK_OVERLAP", "60"))
 TOP_K = int(os.environ.get("TOP_K", "5"))
 
 LLM_PROVIDER = os.environ.get("LLM_PROVIDER", "google").lower()
-GOOGLE_MODEL = os.environ.get("GOOGLE_MODEL", "gemini-2.5-flash")
+GOOGLE_MODEL = os.environ.get("GOOGLE_MODEL", "gemini-3.5-flash-lite")
+GOOGLE_MAX_RETRIES = int(os.environ.get("GOOGLE_MAX_RETRIES", "10"))
 ANTHROPIC_MODEL = os.environ.get("ANTHROPIC_MODEL", "claude-opus-5")
 OPENAI_MODEL = os.environ.get("OPENAI_MODEL", "gpt-4o-mini")
 

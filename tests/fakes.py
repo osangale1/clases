@@ -22,7 +22,7 @@ def reset() -> None:
 
 
 def _registrar(tipo: str, mensajes: list) -> None:
-    VISTO.append((tipo, len(mensajes), mensajes[-1].type))
+    VISTO.append((tipo, len(mensajes), mensajes[-1].type, str(mensajes[-1].content)))
     if mensajes[-1].type == "ai":
         ERRORES_PREFILL.append((tipo, mensajes[-1].content))
 
