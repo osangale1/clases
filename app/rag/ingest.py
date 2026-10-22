@@ -23,6 +23,12 @@ def asegurar_indice() -> None:
     nombres = [i["name"] for i in pc.list_indexes()]
 
     if config.INDEX_NAME in nombres:
+        dimension = pc.describe_index(config.INDEX_NAME).dimension
+        if dimension != config.EMBEDDING_DIMENSION:
+            raise ValueError(
+                f"el indice {config.INDEX_NAME} tiene dimension {dimension} pero los embeddings son de "
+                f"{config.EMBEDDING_DIMENSION}: usa otro INDEX_NAME o borra el indice"
+            )
         print("el indice ya existe")
         return
 

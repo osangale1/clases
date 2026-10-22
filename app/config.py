@@ -12,15 +12,19 @@ PINECONE_NAMESPACE = os.environ.get("PINECONE_NAMESPACE", "documentacion-tecnica
 PINECONE_CLOUD = os.environ.get("PINECONE_CLOUD", "aws")
 PINECONE_REGION = os.environ.get("PINECONE_REGION", "us-east-1")
 
-EMBEDDING_MODEL = os.environ.get("EMBEDDING_MODEL", "text-embedding-3-small")
-EMBEDDING_DIMENSION = int(os.environ.get("EMBEDDING_DIMENSION", "1536"))
+EMBEDDING_PROVIDER = os.environ.get("EMBEDDING_PROVIDER", "google").lower()
+_EMBEDDING_POR_DEFECTO = {"google": ("gemini-embedding-2", 768), "openai": ("text-embedding-3-small", 1536)}
+_modelo_def, _dimension_def = _EMBEDDING_POR_DEFECTO.get(EMBEDDING_PROVIDER, ("", 0))
+EMBEDDING_MODEL = os.environ.get("EMBEDDING_MODEL", _modelo_def)
+EMBEDDING_DIMENSION = int(os.environ.get("EMBEDDING_DIMENSION", _dimension_def))
 
 CARPETA_DATOS = os.environ.get("CARPETA_DATOS", "data")
 CHUNK_SIZE = int(os.environ.get("CHUNK_SIZE", "600"))
 CHUNK_OVERLAP = int(os.environ.get("CHUNK_OVERLAP", "60"))
 TOP_K = int(os.environ.get("TOP_K", "5"))
 
-LLM_PROVIDER = os.environ.get("LLM_PROVIDER", "anthropic").lower()
+LLM_PROVIDER = os.environ.get("LLM_PROVIDER", "google").lower()
+GOOGLE_MODEL = os.environ.get("GOOGLE_MODEL", "gemini-2.5-flash")
 ANTHROPIC_MODEL = os.environ.get("ANTHROPIC_MODEL", "claude-opus-5")
 OPENAI_MODEL = os.environ.get("OPENAI_MODEL", "gpt-4o-mini")
 

@@ -11,7 +11,7 @@ trazas en Arize Phoenix o LangSmith. Python 3.12+.
 ./run_tests.sh
 ```
 
-Crea el entorno, instala dependencias y corre **44 tests** (42 sin Redis, los
+Crea el entorno, instala dependencias y corre **56 tests** (54 sin Redis, los
 2 de integracion con Redis Stack se saltean solos). Deja el resultado en
 `reports/test_report.txt` y `reports/junit.xml`. Los tests usan un LLM falso
 con guion, asi que validan la logica del sistema, no la calidad de un modelo
@@ -36,9 +36,8 @@ Requiere Docker y las API keys en `.env`.
 ```
 
 La primera vez crea `.env` desde `.env.example` y se detiene para que
-completes las keys (`OPENAI_API_KEY` es obligatoria siempre porque se usa
-para los embeddings, mas `ANTHROPIC_API_KEY` si `LLM_PROVIDER=anthropic`, y
-`PINECONE_API_KEY`). Despues de completarlas, volver a correr `./run.sh`.
+completes las keys: `GOOGLE_API_KEY` (Gemini, gratis, ver mas abajo) y
+`PINECONE_API_KEY`. Despues de completarlas, volver a correr `./run.sh`.
 
 Eso levanta con `docker compose up --build`:
 
@@ -144,10 +143,41 @@ nuevo contra el mismo Redis, como pasaria tras un reinicio.
 - Logs: cada paso del supervisor, aporte de agentes y cambio de estado de
   un job queda en el log con el `job_id`.
 
+## Usar Gemini (tier gratuito)
+
+Es el proveedor por defecto (LLM y embeddings), asi no hace falta pagar
+OpenAI ni Anthropic:
+
+1. Crear una key gratis en https://aistudio.google.com/apikey.
+2. Pegarla en `.env` como `GOOGLE_API_KEY` (el resto de las variables de
+   Gemini ya vienen en `.env.example`).
+3. `./run.sh`.
+
+Que hay que saber:
+
+- **Privacidad:** segun la pagina de precios de Google, en el tier gratuito
+  el contenido que se envia se usa para mejorar sus productos. No mandar datos
+  sensibles. Los documentos de `data/` son de ejemplo, no hay problema.
+- **Limites:** el tier gratuito tiene limites por minuto y por dia que Google
+  no fija en la documentacion (se ven en AI Studio). Si se pasan, la API
+  devuelve 429: el cliente reintenta hasta 6 veces y, si igual falla, el job
+  queda en `FAILED` con el error. Para las pruebas conviene correrlas de a una.
+- **Embeddings:** `gemini-embedding-2` no acepta `task_type` y, si se le pasa
+  una lista de textos, devuelve un solo embedding agregado. Por eso
+  `app/rag/embeddings.py` tiene un wrapper propio (un `Content` por texto,
+  prefijos de documento/consulta y chequeo de que vuelva un embedding por
+  texto). Se usa dimension 768, asi que el indice de Pinecone tiene que ser de
+  768: si `INDEX_NAME` ya existe con otra dimension, `ingest` falla con un
+  mensaje claro (usar otro `INDEX_NAME` o borrar el indice).
+- Los modelos gratuitos cambian con el tiempo: si `gemini-2.5-flash` deja de
+  estar disponible, cambiar `GOOGLE_MODEL`.
+- Para volver a un proveedor de pago: `LLM_PROVIDER=anthropic|openai` y/o
+  `EMBEDDING_PROVIDER=openai` (ver los comentarios de `.env.example`).
+
 ## Variables de entorno
 
 Nada de indices ni modelos esta fijo en el codigo: `INDEX_NAME`,
-`PINECONE_NAMESPACE`, `EMBEDDING_MODEL`, `ANTHROPIC_MODEL`, `OPENAI_MODEL`,
+`PINECONE_NAMESPACE`, `EMBEDDING_MODEL`, `GOOGLE_MODEL`, `ANTHROPIC_MODEL`, `OPENAI_MODEL`,
 `MAX_PASOS`, `TOP_K`, etc. Ver `.env.example`.
 
 ## Estructura
@@ -158,7 +188,7 @@ Nada de indices ni modelos esta fijo en el codigo: `INDEX_NAME`,
 - `app/graph.py`, `app/state.py`, `app/hitl.py`: grafo, estado compartido y
   aprobacion humana.
 - `app/agents/`: investigador y analista con sus herramientas.
-- `app/rag/`: chunking, ingesta a Pinecone, retriever hibrido y servicio.
+- `app/rag/`: chunking, ingesta a Pinecone, embeddings (Gemini/OpenAI), retriever hibrido y servicio.
 - `app/jobs.py`: estado de los jobs en Redis.
 - `app/schemas.py`: modelos Pydantic.
 - `app/observability.py`: logs y trazas.

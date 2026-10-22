@@ -2,6 +2,11 @@ from app import config
 
 
 def get_llm():
+    if config.LLM_PROVIDER == "google":
+        from langchain_google_genai import ChatGoogleGenerativeAI
+
+        return ChatGoogleGenerativeAI(model=config.GOOGLE_MODEL, temperature=0, max_retries=6)
+
     if config.LLM_PROVIDER == "openai":
         from langchain_openai import ChatOpenAI
 

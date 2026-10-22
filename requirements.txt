@@ -21,3 +21,5 @@ tiktoken>=0.7.0
 
 arize-phoenix-otel>=0.6.0
 openinference-instrumentation-langchain>=0.1.0
+langchain-google-genai>=4.0.0
+google-genai>=1.0.0
