@@ -1,0 +1,8 @@
+$ docker compose config --services
+redis
+ingest
+phoenix
+app
+
+$ docker compose config -q && echo VALIDO
+VALIDO

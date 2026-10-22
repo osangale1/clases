@@ -5,6 +5,10 @@ orquestador multi-agente con supervisor (LangGraph), una API FastAPI
 asincrona con estado en Redis, aprobacion humana para tareas criticas y
 trazas en Arize Phoenix o LangSmith. Python 3.12+.
 
+## Informe de tests
+
+**[docs/INFORME_TESTS.md](docs/INFORME_TESTS.md)** (tambien en PDF: [docs/INFORME_TESTS.pdf](docs/INFORME_TESTS.pdf)): resultados, cobertura (93 %), capturas, trazas en Phoenix, corrida real con Gemini y bugs encontrados.
+
 ## Verificacion rapida (sin API keys, sin Docker)
 
 ```bash

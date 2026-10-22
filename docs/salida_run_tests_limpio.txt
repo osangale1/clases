@@ -1,0 +1,24 @@
+$ git clone https://github.com/osangale1/clases && cd clases && ./run_tests.sh
+tests/test_api.py::test_health PASSED                                    [  1%]
+tests/test_api.py::test_post_tasks_no_bloquea_y_devuelve_job_id PASSED   [  3%]
+tests/test_api.py::test_tarea_completa_devuelve_respuesta_y_fuentes PASSED [  4%]
+tests/test_api.py::test_hitl_pausa_aprueba_y_reaprobar_da_409 PASSED     [  6%]
+tests/test_api.py::test_fallo_en_background_queda_en_failed PASSED       [  8%]
+tests/test_api.py::test_validacion_pydantic_y_errores_http PASSED        [  9%]
+tests/test_api.py::test_conversation_id_se_usa_como_thread_id PASSED     [ 11%]
+tests/test_api.py::test_openapi_documenta_los_endpoints PASSED           [ 13%]
+tests/test_graph.py::test_es_critico PASSED                              [ 26%]
+tests/test_graph.py::test_flujo_rag_supervisor_investigador_sintesis PASSED [ 27%]
+tests/test_graph.py::test_flujo_con_analista_aporta_los_dos_agentes PASSED [ 29%]
+tests/test_graph.py::test_tarea_critica_se_pausa_y_se_reanuda_al_aprobar PASSED [ 31%]
+tests/test_graph.py::test_rechazo_humano_no_ejecuta_al_analista PASSED   [ 32%]
+tests/test_graph.py::test_tope_de_pasos_corta_el_bucle_del_supervisor PASSED [ 34%]
+tests/test_graph.py::test_checkpointer_recuerda_la_conversacion_por_thread_id PASSED [ 36%]
+tests/test_graph.py::test_supervisor_recibe_quien_aporto_que PASSED      [ 37%]
+tests/test_graph.py::test_validacion_no_deja_cerrar_sin_el_analisis_pedido PASSED [ 39%]
+tests/test_graph.py::test_resumen_dice_que_agente_falta PASSED           [ 40%]
+tests/test_integracion_redis.py::test_pausa_hitl_se_reanuda_desde_otro_checkpointer SKIPPED [ 42%]
+tests/test_integracion_redis.py::test_la_conversacion_sobrevive_a_un_reinicio SKIPPED [ 44%]
+SKIPPED [1] tests/test_integracion_redis.py:45: hace falta Redis Stack en redis://localhost:6379 (docker run -p 6379:6379 redis/redis-stack-server)
+SKIPPED [1] tests/test_integracion_redis.py:80: hace falta Redis Stack en redis://localhost:6379 (docker run -p 6379:6379 redis/redis-stack-server)
+======================== 59 passed, 2 skipped in 7.67s =========================

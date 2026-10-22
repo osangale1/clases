@@ -1,0 +1,91 @@
+============================= test session starts ==============================
+platform darwin -- Python 3.12.13, pytest-9.1.1, pluggy-1.7.0 -- ./.venv/bin/python3.12
+cachedir: .pytest_cache
+rootdir: .
+configfile: pyproject.toml
+testpaths: tests
+plugins: cov-7.1.0, asyncio-1.4.0, langsmith-0.14.12, anyio-4.15.1
+asyncio: mode=Mode.AUTO, debug=False, asyncio_default_fixture_loop_scope=None, asyncio_default_test_loop_scope=function
+collecting ... collected 61 items
+
+tests/test_api.py::test_health PASSED                                    [  1%]
+tests/test_api.py::test_post_tasks_no_bloquea_y_devuelve_job_id PASSED   [  3%]
+tests/test_api.py::test_tarea_completa_devuelve_respuesta_y_fuentes PASSED [  4%]
+tests/test_api.py::test_hitl_pausa_aprueba_y_reaprobar_da_409 PASSED     [  6%]
+tests/test_api.py::test_fallo_en_background_queda_en_failed PASSED       [  8%]
+tests/test_api.py::test_validacion_pydantic_y_errores_http PASSED        [  9%]
+tests/test_api.py::test_conversation_id_se_usa_como_thread_id PASSED     [ 11%]
+tests/test_api.py::test_openapi_documenta_los_endpoints PASSED           [ 13%]
+tests/test_estandares.py::test_python_312_o_superior PASSED              [ 14%]
+tests/test_estandares.py::test_no_se_usa_la_libreria_requests_sincrona PASSED [ 16%]
+tests/test_estandares.py::test_los_nodos_y_el_worker_son_async PASSED    [ 18%]
+tests/test_estandares.py::test_los_endpoints_de_la_api_son_async PASSED  [ 19%]
+tests/test_estandares.py::test_no_hay_llamadas_bloqueantes_en_funciones_async PASSED [ 21%]
+tests/test_estandares.py::test_nada_hardcodeado_los_ids_salen_de_variables_de_entorno PASSED [ 22%]
+tests/test_estandares.py::test_hay_archivos_de_entorno_y_despliegue PASSED [ 24%]
+tests/test_graph.py::test_es_critico PASSED                              [ 26%]
+tests/test_graph.py::test_flujo_rag_supervisor_investigador_sintesis PASSED [ 27%]
+tests/test_graph.py::test_flujo_con_analista_aporta_los_dos_agentes PASSED [ 29%]
+tests/test_graph.py::test_tarea_critica_se_pausa_y_se_reanuda_al_aprobar PASSED [ 31%]
+tests/test_graph.py::test_rechazo_humano_no_ejecuta_al_analista PASSED   [ 32%]
+tests/test_graph.py::test_tope_de_pasos_corta_el_bucle_del_supervisor PASSED [ 34%]
+tests/test_graph.py::test_checkpointer_recuerda_la_conversacion_por_thread_id PASSED [ 36%]
+tests/test_graph.py::test_supervisor_recibe_quien_aporto_que PASSED      [ 37%]
+tests/test_graph.py::test_validacion_no_deja_cerrar_sin_el_analisis_pedido PASSED [ 39%]
+tests/test_graph.py::test_resumen_dice_que_agente_falta PASSED           [ 40%]
+tests/test_integracion_redis.py::test_pausa_hitl_se_reanuda_desde_otro_checkpointer PASSED [ 42%]
+tests/test_integracion_redis.py::test_la_conversacion_sobrevive_a_un_reinicio PASSED [ 44%]
+tests/test_proveedores.py::test_get_llm_google PASSED                    [ 45%]
+tests/test_proveedores.py::test_get_llm_proveedor_desconocido PASSED     [ 47%]
+tests/test_proveedores.py::test_herramientas_y_salidas_estructuradas_son_compatibles_con_gemini PASSED [ 49%]
+tests/test_proveedores.py::test_get_embeddings_segun_proveedor PASSED    [ 50%]
+tests/test_proveedores.py::test_documentos_van_uno_por_content_con_prefijo_y_dimension PASSED [ 52%]
+tests/test_proveedores.py::test_consulta_usa_el_prefijo_de_busqueda PASSED [ 54%]
+tests/test_proveedores.py::test_version_async_tiene_el_mismo_contrato PASSED [ 55%]
+tests/test_proveedores.py::test_lotes_respetan_el_tamano_maximo PASSED   [ 57%]
+tests/test_proveedores.py::test_si_gemini_devuelve_un_embedding_agregado_falla_con_error_claro PASSED [ 59%]
+tests/test_proveedores.py::test_indice_con_otra_dimension_falla_antes_de_subir_nada PASSED [ 60%]
+tests/test_proveedores.py::test_indice_con_la_dimension_correcta_se_reutiliza PASSED [ 62%]
+tests/test_proveedores.py::test_indice_inexistente_se_crea_con_la_dimension_configurada PASSED [ 63%]
+tests/test_proveedores.py::test_modo_memoria_indexa_al_arrancar_sin_pinecone PASSED [ 65%]
+tests/test_proveedores.py::test_ingest_en_modo_memoria_no_sube_nada PASSED [ 67%]
+tests/test_rag.py::test_chunking_cubre_todos_los_documentos_con_metadatos PASSED [ 68%]
+tests/test_rag.py::test_tokenizador_ignora_mayusculas_acentos_y_puntuacion PASSED [ 70%]
+tests/test_rag.py::test_retriever_es_hibrido_bm25_mas_vectorial PASSED   [ 72%]
+tests/test_rag.py::test_parte_lexica_encuentra_termino_tecnico_exacto PASSED [ 73%]
+tests/test_rag.py::test_retriever_respeta_top_k PASSED                   [ 75%]
+tests/test_rag.py::test_retriever_devuelve_fragmentos_validados PASSED   [ 77%]
+tests/test_schemas.py::test_tarea_rechaza_texto_corto PASSED             [ 78%]
+tests/test_schemas.py::test_tarea_rechaza_texto_demasiado_largo PASSED   [ 80%]
+tests/test_schemas.py::test_tarea_conversation_id_es_opcional PASSED     [ 81%]
+tests/test_schemas.py::test_costo_rechaza_valores_negativos PASSED       [ 83%]
+tests/test_schemas.py::test_sentimiento_rechaza_texto_vacio PASSED       [ 85%]
+tests/test_schemas.py::test_supervisor_solo_acepta_destinos_validos PASSED [ 86%]
+tests/test_schemas.py::test_estado_tarea_solo_acepta_status_conocidos PASSED [ 88%]
+tests/test_tools.py::test_sentimiento_positivo PASSED                    [ 90%]
+tests/test_tools.py::test_sentimiento_negativo PASSED                    [ 91%]
+tests/test_tools.py::test_sentimiento_neutral PASSED                     [ 93%]
+tests/test_tools.py::test_costo_tokens_calculo_exacto PASSED             [ 95%]
+tests/test_tools.py::test_herramienta_valida_argumentos_con_pydantic PASSED [ 96%]
+tests/test_tools.py::test_buscar_en_documentos_devuelve_fragmentos_con_metadatos PASSED [ 98%]
+tests/test_tools.py::test_buscar_en_documentos_valida_consulta_corta PASSED [100%]
+
+================================ tests coverage ================================
+______________ coverage: platform darwin, python 3.12.13-final-0 _______________
+
+Name                    Stmts   Miss  Cover   Missing
+-----------------------------------------------------
+app/graph.py              105      3    97%   45, 187-188
+app/llm.py                 12      4    67%   11-13, 16-18
+app/observability.py       16      6    62%   18-27, 29
+app/rag/embeddings.py      59      2    97%   29-30
+app/rag/ingest.py          45     17    62%   15-18, 42, 47-49, 57-72, 76
+app/rag/retriever.py       17      1    94%   19
+app/rag/service.py         28      2    93%   25, 52
+app/worker.py              36      2    94%   85-86
+-----------------------------------------------------
+TOTAL                     527     37    93%
+
+12 files skipped due to complete coverage.
+Coverage JSON written to file docs/coverage.json
+============================== 61 passed in 5.32s ==============================
