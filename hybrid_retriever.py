@@ -1,3 +1,6 @@
+import re
+import unicodedata
+
 from dotenv import load_dotenv
 from langchain_classic.retrievers import EnsembleRetriever
 from langchain_community.retrievers import BM25Retriever
@@ -11,11 +14,17 @@ load_dotenv()
 TOP_K = 5
 
 
+def tokenizar(texto: str) -> list[str]:
+    # el tokenizador por defecto de BM25 es text.split(): "`raise_for_status()`" no matchea "raise_for_status"
+    sin_acentos = "".join(c for c in unicodedata.normalize("NFKD", texto.lower()) if not unicodedata.combining(c))
+    return re.findall(r"\w+", sin_acentos)
+
+
 class RAGSystem:
     def __init__(self):
         fragmentos = cargar_y_fragmentar()
 
-        bm25 = BM25Retriever.from_documents(fragmentos)
+        bm25 = BM25Retriever.from_documents(fragmentos, preprocess_func=tokenizar)
         bm25.k = TOP_K
 
         vectorstore = PineconeVectorStore(
