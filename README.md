@@ -9,6 +9,8 @@ trazas en Arize Phoenix o LangSmith. Python 3.12+.
 
 **[docs/INFORME_TESTS.md](docs/INFORME_TESTS.md)** (tambien en PDF: [docs/INFORME_TESTS.pdf](docs/INFORME_TESTS.pdf)): resultados, cobertura (93 %), capturas, trazas en Phoenix, corrida real con Gemini y bugs encontrados.
 
+**[docs/REVISION_OPENCODE.md](docs/REVISION_OPENCODE.md)**: revision de codigo hecha con OpenCode (salida textual y como reproducirla).
+
 ## Verificacion rapida (sin API keys, sin Docker)
 
 ```bash

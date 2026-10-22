@@ -7,10 +7,12 @@ import httpx
 
 BASE_URL = os.environ.get("API_URL", "http://localhost:8000")
 ESTADOS_FINALES = ("DONE", "FAILED")
+# con un LLM real (y reintentos por 429/503 del tier gratis) una tarea puede tardar varios minutos
+ESPERA_MAXIMA_SEGUNDOS = int(os.environ.get("PRUEBAS_ESPERA_MAXIMA", "900"))
 
 
 async def esperar(client: httpx.AsyncClient, job_id: str, extra=()) -> dict:
-    for _ in range(120):
+    for _ in range(ESPERA_MAXIMA_SEGUNDOS):
         estado = (await client.get(f"{BASE_URL}/tasks/{job_id}")).json()
         if estado["status"] in ESTADOS_FINALES or estado["status"] in extra:
             return estado

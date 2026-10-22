@@ -1,0 +1,123 @@
+{
+  "fecha": "2026-10-22",
+  "comando": "python scripts/pruebas.py (por tandas, un modelo por tanda)",
+  "entorno": "API real + Redis Stack + Phoenix en Docker, VECTOR_STORE=memory, embeddings gemini-embedding-2",
+  "pruebas": {
+    "prueba_1_rag": {
+      "job_id": "79dcc9b4-ba7a-4384-b1b0-3dc695c65130",
+      "thread_id": "79dcc9b4-ba7a-4384-b1b0-3dc695c65130",
+      "status": "DONE",
+      "pregunta": null,
+      "contribuciones": {
+        "investigador": "Basándome en los documentos, **RAG (Retrieval-Augmented Generation)** es una técnica que combina un sistema de búsqueda con un modelo de lenguaje. Funciona recuperando primero los fragmentos de documentos más similares a la pregunta del usuario, y luego el modelo genera la respuesta utilizando únicamente esos fragmentos como contexto.\n\nEsto **ayuda a reducir las alucinaciones** porque el modelo no tiene que responder de memoria (lo cual puede dar lugar a inventos o imprecisiones), sino basándose en información concreta y provista. Si el contexto recuperado no contiene la respuesta, lo correcto es que el modelo indique que no lo sabe.\n\n*Fuente: `rag.md` (página 1)*"
+      },
+      "resultado": {
+        "respuesta": "Basándose en los documentos, RAG (Retrieval-Augmented Generation) es una técnica que mejora la precisión de los modelos de lenguaje al buscar primero información relevante en una base de datos externa y luego utilizar esos fragmentos como contexto para redactar la respuesta. Ayuda a reducir las alucinaciones porque restringe al modelo a utilizar datos reales y verificables en lugar de depender únicamente de su memoria interna, permitiéndole además admitir cuando no encuentra la información en lugar de inventarla.",
+        "fuentes": [
+          "rag.md"
+        ]
+      },
+      "error": null,
+      "segundos": 312.9,
+      "modelo": "gemini-3.5-flash-lite"
+    },
+    "prueba_2_rag_y_analisis": {
+      "job_id": "a6ea3a4f-5eab-45fe-97f5-38b8aa25229c",
+      "thread_id": "a6ea3a4f-5eab-45fe-97f5-38b8aa25229c",
+      "status": "DONE",
+      "pregunta": null,
+      "contribuciones": {
+        "investigador": "Según la documentación encontrada, Redis se describe de la siguiente manera:\n\n* Es una **base de datos en memoria, muy rápida**, que también puede persistir los datos en disco (`redis.md`, p. 1).\n* Se utiliza para dos funciones clave: guardar el estado de cada job (`PENDING`, `RUNNING`, `DONE`, `FAILED`) y almacenar los checkpoints de LangGraph (`redis.md`, p. 1).\n* Con la persistencia activada (`appendonly`), se garantiza que las conversaciones no se pierdan si el servidor se reinicia (`redis.md`, p. 1).\n\n**Análisis del tono:**\nEl texto suena **netamente positivo**. Se utilizan calificativos favorables como *\"muy rápida\"* y se destacan fortalezas técnicas importantes (como su capacidad de persistencia para evitar la pérdida de datos y su utilidad indispensable para el funcionamiento de LangGraph mediante Redis Stack). No se mencionan desventajas, fallas ni críticas negativas sobre la herramienta en el documento.\n\n**Fuente:** `redis.md` (página 1).",
+        "analista": "He procesado la información reunida sobre Redis utilizando la herramienta de análisis de sentimiento. \n\nAquí tienes el resultado del análisis:\n* **Sentimiento detectado:** Neutral\n* **Puntajes obtenidos:** \n  * Positivo: 0\n  * Negativo: 0\n\n**Explicación del resultado:**\nAunque la descripción destaca características muy útiles y favorables de Redis (como ser *\"muy rápida\"* y *\"garantizar que las conversaciones no se pierdan\"*), el análisis automático de palabras clave clasifica el texto como **neutral**. Esto ocurre porque la información recopilada tiene un tono puramente técnico, descriptivo e informativo, exento de subjetividad o de una carga emocional excesiva (positiva o negativa)."
+      },
+      "resultado": {
+        "respuesta": "Segun el archivo redis.md, Redis es una base de datos en memoria muy rapida que permite persistir datos en disco, utilizada para guardar el estado de los jobs y almacenar checkpoints de LangGraph. El texto suena positivo, ya que destaca su gran velocidad y confiabilidad para evitar la perdida de datos.",
+        "fuentes": [
+          "redis.md"
+        ]
+      },
+      "error": null,
+      "segundos": 205.6,
+      "modelo": "gemini-3.5-flash-lite"
+    },
+    "prueba_3_calculo": {
+      "job_id": "2d2fecdb-a066-43ab-9555-acdbe83d9b80",
+      "thread_id": "2d2fecdb-a066-43ab-9555-acdbe83d9b80",
+      "status": "DONE",
+      "pregunta": null,
+      "contribuciones": {
+        "analista": "El costo total estimado para la llamada al modelo es de **$0.0081 USD** (o 0.81 centavos de dólar).\n\n### Desglose del cálculo:\n- **Tokens de entrada:** $1\\,200 \\text{ tokens} \\times \\frac{\\$3.00}{1\\,000\\,000 \\text{ tokens}} = \\$0.0036 \\text{ USD}$\n- **Tokens de salida:** $300 \\text{ tokens} \\times \\frac{\\$15.00}{1\\,000\\,000 \\text{ tokens}} = \\$0.0045 \\text{ USD}$\n- **Costo total:** $\\$0.0036 + \\$0.0045 = \\$0.0081 \\text{ USD}$"
+      },
+      "resultado": {
+        "respuesta": "El costo total estimado para la llamada es de $0.0081 USD. Desglose del cálculo: 1,200 tokens de entrada a $3.00 USD por millón equivalen a $0.0036 USD. 300 tokens de salida a $15.00 USD por millón equivalen a $0.0045 USD. La suma de ambos da un total de $0.0081 USD.",
+        "fuentes": []
+      },
+      "error": null,
+      "segundos": 78.4,
+      "modelo": "gemini-3.6-flash"
+    },
+    "prueba_4_critica_aprobada": {
+      "job_id": "78cf930c-1461-423f-9504-a99f1d65ed2d",
+      "thread_id": "78cf930c-1461-423f-9504-a99f1d65ed2d",
+      "status": "DONE",
+      "pregunta": null,
+      "contribuciones": {
+        "investigador": "Según el documento **`pinecone.md`**, la información sobre Pinecone es la siguiente:\n\n- **Base de datos vectorial administrada**: En su modo *serverless* no requiere dimensionar servidores; solo se crea un índice con una dimensión fija (que debe coincidir con la del modelo de *embeddings*, p. ej., 1536) y una métrica (normalmente coseno).\n- **Uso de namespaces y metadatos**: Permite separar datos por *namespace* para evitar mezclas en las búsquedas. Guarda metadatos (fuente, página, categoría) junto al vector para filtrar y citar la procedencia de las respuestas.\n- **Búsqueda híbrida**: Combina la similitud vectorial de Pinecone con una búsqueda léxica (tipo BM25), lo cual ayuda a encontrar nombres propios y términos técnicos exactos.\n\n**Análisis de tono:**\nEl contenido **suena positivo y ventajoso**, ya que resalta facilidades operativas (modo *serverless* sin necesidad de gestionar o dimensionar servidores), buenas prácticas organizativas (filtrado mediante metadatos y namespaces) y mejoras en la precisión de búsqueda gracias a la búsqueda híbrida.",
+        "analista": "Procesé la información sobre Pinecone con la herramienta de análisis de sentimiento y estos son los resultados:\n\n* **Sentimiento determinado:** Positivo\n* **Puntaje positivo:** 1\n* **Puntaje negativo:** 0\n\n**Explicación del resultado:**\nEl texto recopilado presenta un tono favorable/positivo, destacando ventajas funcionales como el modo *serverless* (que evita tener que dimensionar servidores), la flexibilidad de los metadatos para filtrar respuestas y la eficacia de la búsqueda híbrida para términos técnicos exactos, sin presentar observaciones o métricas negativas."
+      },
+      "resultado": {
+        "respuesta": "Según lo encontrado en pinecone.md, Pinecone es una base de datos vectorial administrada que en modo serverless evita dimensionar servidores, permite organizar datos por namespaces, guardar metadatos para filtrar y citar fuentes, y realizar búsquedas híbridas con BM25 para términos exactos. El análisis de sentimiento confirma que suena positivo (sentimiento positivo: 1, negativo: 0), destacando sus ventajas funcionales y facilidades operativas sin presentar aspectos negativos.",
+        "fuentes": [
+          "pinecone.md"
+        ]
+      },
+      "error": null,
+      "segundos": 187.5,
+      "modelo": "gemini-3.6-flash"
+    },
+    "prueba_5_critica_rechazada": {
+      "job_id": "84ae60f1-650e-498d-aee0-219732e3652b",
+      "thread_id": "84ae60f1-650e-498d-aee0-219732e3652b",
+      "status": "DONE",
+      "pregunta": null,
+      "contribuciones": {
+        "investigador": "Basado en la documentación técnica, el análisis de **LangGraph** es muy positivo y se considera un componente crítico en la arquitectura del sistema por las siguientes razones:\n\n*   **Estructura y control:** Permite modelar agentes como grafos de estado. Esto facilita el seguimiento del flujo lógico, especialmente con el patrón de \"supervisor\", donde un nodo central gestiona la delegación de tareas a especialistas (*langgraph.md*).\n*   **Persistencia y fiabilidad:** A través de la integración con **Redis Stack** (usando el módulo RediSearch), LangGraph permite guardar checkpoints del estado. Esto asegura que, ante un reinicio del servidor, las conversaciones no se pierdan (*redis.md*).\n*   **Capacidad \"Human-in-the-loop\":** Gracias al uso de `interrupt` y el sistema de checkpointer, el sistema permite pausar la ejecución para solicitar aprobación humana, lo que añade una capa de control necesaria en procesos complejos (*langgraph.md*).\n*   **Observabilidad:** La implementación permite ser monitoreada mediante herramientas como LangSmith, lo cual es fundamental para entender el comportamiento de los agentes, los nodos que más consumen y el costo de las ejecuciones (*observabilidad.md*).\n\n**Consideración crítica:** \nLa documentación advierte que, al trabajar con grafos, es obligatorio establecer un **límite de pasos** para evitar la generación de bucles infinitos en el flujo de ejecución (*langgraph.md*). Además, su correcto funcionamiento de persistencia depende estrictamente de tener configurado Redis Stack, no basta con una versión estándar de Redis (*redis.md*)."
+      },
+      "resultado": {
+        "respuesta": "La evaluación de LangGraph es sumamente positiva, destacándolo como una herramienta crítica por permitir la creación de flujos de trabajo cíclicos y persistentes. Se resalta su capacidad para implementar patrones de 'supervisor', su sistema de persistencia mediante Redis Stack para recuperar estados ante fallos y la integración de puntos de interrupción para validación humana. No obstante, se advierte que es obligatorio definir límites de pasos para evitar bucles infinitos y se subraya que requiere específicamente Redis Stack para su correcto funcionamiento. La aprobación técnica fue exitosa.",
+        "fuentes": [
+          "langgraph.md",
+          "redis.md",
+          "observabilidad.md"
+        ]
+      },
+      "error": null,
+      "segundos": 202.4,
+      "modelo": "gemini-3.1-flash-lite"
+    },
+    "prueba_6_memoria": {
+      "job_id": "dcbca7f8-7825-4051-ae48-acdfde20ba78",
+      "thread_id": "conv-prueba-memoria",
+      "status": "DONE",
+      "pregunta": null,
+      "contribuciones": {
+        "investigador": "La principal ventaja de combinar Pinecone con una búsqueda léxica tipo BM25 es que **ayuda a mejorar la precisión en la búsqueda cuando se trata de nombres propios y términos técnicos exactos**, elementos en los que la búsqueda vectorial pura a veces puede presentar dificultades.\n\n**Fuente:** `pinecone.md`, página 1."
+      },
+      "resultado": {
+        "respuesta": "La principal ventaja de combinar Pinecone con una búsqueda léxica tipo BM25 es que ayuda a mejorar la precisión en la búsqueda cuando se trata de nombres propios y términos técnicos exactos, elementos en los que la búsqueda vectorial pura a veces puede presentar dificultades.",
+        "fuentes": [
+          "pinecone.md"
+        ]
+      },
+      "error": null,
+      "segundos": 213.2,
+      "modelo": "gemini-3.1-flash-lite"
+    },
+    "prueba_7_validacion": {
+      "status_http": 422,
+      "esperado": 422,
+      "segundos": 0.0,
+      "modelo": "gemini-3.1-flash-lite"
+    }
+  }
+}

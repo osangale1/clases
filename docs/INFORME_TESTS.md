@@ -9,11 +9,12 @@ Entrega final. Fecha de la corrida: 2026-10-22. Repositorio: https://github.com/
 | --- | --- |
 | Suite de tests (pytest) | **61 de 61 pasan** (incluye 2 de integracion contra Redis Stack real) |
 | Cobertura de `app/` | **93 %** (527 sentencias, 37 sin cubrir) |
+| Revision de codigo con OpenCode (`gemini-3.5-flash-lite`) | Ver [`REVISION_OPENCODE.md`](REVISION_OPENCODE.md): sin problemas de severidad media/alta |
 | Corrida en una copia limpia, sin Redis | 59 pasan, 2 se saltean solos (los de integracion) |
 | Lint (`ruff check`, `ruff format --check`) | Sin errores |
 | `docker-compose.yml` | Valido (servicios `redis`, `ingest`, `phoenix`, `app`) |
 | Trazas en Arize Phoenix | 7 pruebas trazadas (LLM con guion) + corrida real con Gemini |
-| Corrida real con Gemini (tier gratuito) | RAG por la API `DONE`, tarea investigador + analista `DONE` |
+| **Las 7 pruebas de `scripts/pruebas.py` con Gemini real** (tier gratuito) | **7 de 7 OK** (6 `DONE` + 1 rechazo 422 esperado), 54 llamadas reales al LLM trazadas en Phoenix |
 
 ## 2. Como reproducirlo
 
@@ -92,19 +93,50 @@ Rechazo humano de una tarea critica (`aprobacion` -> `enrutar_aprobacion` -> `si
 
 ![phoenix hitl](../screenshots/phoenix_traza_detalle_hitl_offline.png)
 
-## 7. Corrida real con Gemini
+## 7. Corrida real con Gemini: las 7 pruebas
 
-Detalle completo en `reports/gemini_real.md`.
+`scripts/pruebas.py` contra la API real (Redis Stack + Phoenix en Docker, `VECTOR_STORE=memory`,
+embeddings `gemini-embedding-2`). Como el tier gratuito tiene un cupo de 20 pedidos por dia por
+modelo, las pruebas se repartieron en 3 tandas, cada una con un modelo gratuito distinto.
+Resultado crudo: `reports/pruebas_gemini_real.json`.
 
-| Que se corrio | Resultado |
-| --- | --- |
-| Embeddings `gemini-embedding-2` (768 dim) | La consulta "donde se guarda el estado de las tareas?" quedo mas cerca del documento de Redis (0.757 vs 0.582 / 0.618) |
-| Prueba RAG por la API | `DONE`: supervisor -> investigador -> FINISH -> sintesis, fuente `rag.md` |
-| Herramienta `calcular_costo_tokens` | El analista la llamo y respondio 0.0081 USD |
-| Herramienta `buscar_en_documentos` | El investigador la llamo y cito Redis |
-| "Busca info de Redis y analiza el sentimiento" | `DONE`: investigador -> analista -> FINISH -> sintesis, fuente `redis.md` |
+| Prueba | Modelo | Estado | Agentes que aportaron | Fuentes citadas | Tiempo |
+| --- | --- | --- | --- | --- | --- |
+| `prueba_1_rag` | `gemini-3.5-flash-lite` | DONE | investigador | rag.md | 312.9 s |
+| `prueba_2_rag_y_analisis` | `gemini-3.5-flash-lite` | DONE | investigador, analista | redis.md | 205.6 s |
+| `prueba_3_calculo` | `gemini-3.6-flash` | DONE | analista | - | 78.4 s |
+| `prueba_4_critica_aprobada` | `gemini-3.6-flash` | DONE (pausa HITL + aprobacion) | investigador, analista | pinecone.md | 187.5 s |
+| `prueba_5_critica_rechazada` | `gemini-3.1-flash-lite` | DONE (pausa HITL + rechazo: el analista no corre) | investigador | langgraph.md, redis.md, observabilidad.md | 202.4 s |
+| `prueba_6_memoria` | `gemini-3.1-flash-lite` | DONE (2 turnos, mismo `conversation_id`) | investigador | pinecone.md | 213.2 s |
+| `prueba_7_validacion` | - | 422 (entrada invalida rechazada por Pydantic) | - | - | 0 s |
 
-## 8. Bugs que encontraron los tests y las corridas (todos corregidos)
+En la prueba 2 actuo la validacion del supervisor con el modelo real: el log registra
+`validacion: el supervisor quiso cerrar sin el analisis pedido, se deriva al analista`, y despues el
+analista aporto y la tarea cerro bien.
+
+Phoenix (proyecto `sistema-final-gemini-real`, todas las corridas reales del dia): 54 llamadas al LLM
+con 39 404 tokens (31 149 de entrada, 8 255 de salida) en 3 modelos, 11 ejecuciones completas del
+grafo, latencia p50 150 s y p95 268 s. La latencia alta viene de los reintentos por 503/429 del tier
+gratuito (por ejemplo `gemini-3.6-flash` devolvio 25 errores 503/429 en su tanda), no del sistema.
+
+Pausa humana aprobada (prueba 4), con supervisor, investigador, herramienta RAG y tokens reales:
+
+![traza hitl real](../screenshots/phoenix_gemini_real_hitl.png)
+
+Analista llamando a `calcular_costo_tokens` (prueba 3):
+
+![traza costo real](../screenshots/phoenix_gemini_real_costo.png)
+
+Detalle de los chequeos de cada componente y de los limites del tier gratuito: `reports/gemini_real.md`.
+
+## 8. Revision de codigo con OpenCode
+
+Corrida con OpenCode 1.19.4 (agente `plan`, solo lectura) sobre un clone limpio del repo. Salida textual,
+metadatos y como reproducirla: [`REVISION_OPENCODE.md`](REVISION_OPENCODE.md).
+
+![opencode](capturas/06_opencode_revision.png)
+
+## 9. Bugs que encontraron los tests y las corridas (todos corregidos)
 
 | Bug | Como se detecto | Correccion |
 | --- | --- | --- |
@@ -116,13 +148,14 @@ Detalle completo en `reports/gemini_real.md`.
 | `gemini-embedding-2` devuelve un embedding agregado si recibe una lista | Documentacion de Google + test | Wrapper propio: un `Content` por texto |
 | El supervisor repetia al investigador | Corrida real con Gemini | El supervisor recibe el resumen de quien aporto que |
 | El supervisor cerraba sin el analisis pedido | Corrida real con Gemini | Validacion en codigo antes de aceptar FINISH |
+| `scripts/pruebas.py` se daba por vencido a los 120 s mientras el job seguia corriendo | Corrida real con Gemini (reintentos por 503) | Espera maxima configurable, 900 s por defecto (`PRUEBAS_ESPERA_MAXIMA`) |
 
-## 9. Alcance y limites
+## 10. Alcance y limites
 
 - Los tests usan un LLM falso con guion: validan la logica del sistema (enrutamiento, pausa humana,
   estado, validacion, persistencia, trazas), no la calidad de las respuestas de un modelo.
-- La calidad con modelo real se verifico con Gemini (seccion 7). El tier gratuito tiene un cupo de
-  20 pedidos por dia y 5 por minuto por modelo (segun el error 429 de Google), por eso las 7 pruebas
-  de `scripts/pruebas.py` no se completaron todas con modelo real el mismo dia.
+- La calidad con modelo real se verifico con Gemini (seccion 7): las 7 pruebas pasaron. El tier
+  gratuito tiene un cupo de 20 pedidos por dia y 5 por minuto por modelo (segun el error 429 de
+  Google), por eso se repartieron entre 3 modelos.
 - Pinecone no participo en las corridas reales (se uso `VECTOR_STORE=memory`); su integracion esta
   cubierta con un cliente falso (creacion del indice, chequeo de dimension).

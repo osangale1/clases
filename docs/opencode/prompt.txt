@@ -1,0 +1,15 @@
+Hace una revision de codigo de este repositorio (entrega final de un curso de AI Engineering: RAG hibrido + agentes con supervisor en LangGraph + API FastAPI async + Redis + observabilidad). NO modifiques ningun archivo. IMPORTANTE: todos los archivos relevantes ya estan ADJUNTOS a este mensaje; NO uses herramientas ni leas otros archivos, responde directamente con lo adjunto.
+
+Revisa el codigo real (app/, tests/, scripts/, docker-compose.yml, Dockerfile, run.sh, pyproject.toml, requirements*.txt, .env.example, README.md, docs/INFORME_TESTS.md) y evalua estos 5 criterios:
+1. Arquitectura y coherencia del sistema (integracion LLMs + RAG + agentes en un flujo unificado) - 30%
+2. Robustez tecnica: asincronia y validacion (async/await en Python 3.12, Pydantic) - 25%
+3. Persistencia y observabilidad (checkpointer de LangGraph, trazas con herramientas externas) - 20%
+4. Documentacion y despliegue (README, diagrama, Docker/scripts) - 15%
+5. Configuracion de entorno y estandares de codigo (Python 3.12+, dependencias, variables de entorno) - 10%
+
+Responde en espanol, en Markdown, con este formato:
+## Resumen
+## Evaluacion por criterio (para cada uno: fortalezas con evidencia archivo:linea, problemas con archivo:linea y severidad alta/media/baja, y un puntaje sugerido sobre su peso)
+## Problemas encontrados (lista priorizada)
+## Conclusion
+Se especifico: cita archivos y lineas reales que hayas leido. No inventes.
